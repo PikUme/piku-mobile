@@ -2,12 +2,19 @@ import { apiClient } from '@/lib/api/client';
 import { env } from '@/lib/env';
 import type { ApiError } from '@/lib/api/errors';
 import { FriendshipStatus } from '@/types/friend';
-import type { DiaryMonthCountDTO, UserProfileResponseDTO } from '@/types/profile';
+import type {
+  DiaryMonthCountDTO,
+  NicknameAvailabilityResponseDTO,
+  UpdateProfilePayload,
+  UpdateProfileResponseDTO,
+  UserProfileResponseDTO,
+} from '@/types/profile';
 
 const shouldUseLocalProfileMock =
   process.env.NODE_ENV !== 'test' &&
   env.appEnv === 'local' &&
   (env.apiBaseUrl.includes('localhost') || env.apiBaseUrl.includes('api.example.com'));
+const LOCAL_TAKEN_NICKNAMES = new Set(['test', '도리', '모아', '하루', '다온']);
 
 const isRecoverableLocalNetworkError = (error: unknown) => {
   if (env.appEnv !== 'local') {
@@ -89,6 +96,67 @@ export async function getProfileInfo(userId: string): Promise<UserProfileRespons
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {
       return buildLocalProfilePreviewMock(userId);
+    }
+
+    throw error;
+  }
+}
+
+export async function checkNicknameAvailability(
+  nickname: string,
+): Promise<NicknameAvailabilityResponseDTO> {
+  const normalizedNickname = nickname.trim();
+
+  if (shouldUseLocalProfileMock) {
+    const isAvailable = normalizedNickname.length > 0 && !LOCAL_TAKEN_NICKNAMES.has(normalizedNickname);
+    return {
+      success: isAvailable,
+      message: isAvailable ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.',
+    };
+  }
+
+  try {
+    const response = await apiClient.get<NicknameAvailabilityResponseDTO>(
+      '/users/nickname/availability',
+      {
+        params: { nickname: normalizedNickname },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      const isAvailable = normalizedNickname.length > 0 && !LOCAL_TAKEN_NICKNAMES.has(normalizedNickname);
+      return {
+        success: isAvailable,
+        message: isAvailable ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.',
+      };
+    }
+
+    throw error;
+  }
+}
+
+export async function updateUserProfile(
+  payload: UpdateProfilePayload,
+): Promise<UpdateProfileResponseDTO> {
+  if (shouldUseLocalProfileMock) {
+    return {
+      success: true,
+      message: '프로필이 성공적으로 변경되었습니다.',
+      newNickname: payload.newNickname,
+    };
+  }
+
+  try {
+    const response = await apiClient.patch<UpdateProfileResponseDTO>('/users/profile', payload);
+    return response.data;
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      return {
+        success: true,
+        message: '프로필이 성공적으로 변경되었습니다.',
+        newNickname: payload.newNickname,
+      };
     }
 
     throw error;

@@ -18,3 +18,20 @@ export interface UserProfileResponseDTO {
   isOwner: boolean;
   monthlyDiaryCount: DiaryMonthCountDTO[];
 }
+
+export interface UpdateProfilePayload {
+  newNickname?: string;
+  characterId?: number;
+}
+
+export interface NicknameAvailabilityResponseDTO {
+  success: boolean;
+  message: string;
+}
+
+export interface UpdateProfileResponseDTO {
+  success: boolean;
+  message: string;
+  newNickname?: string;
+  avatar?: string;
+}
