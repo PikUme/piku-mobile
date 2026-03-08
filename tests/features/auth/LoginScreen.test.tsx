@@ -56,18 +56,15 @@ describe('LoginScreen', () => {
 
     fireEvent.changeText(
       screen.getByTestId('login-email-input'),
-      'tester@example.com',
+      'test@gmail.com',
     );
-    fireEvent.changeText(
-      screen.getByTestId('login-password-input'),
-      'password123!',
-    );
+    fireEvent.changeText(screen.getByTestId('login-password-input'), '1');
     fireEvent.press(screen.getByTestId('login-submit-button'));
 
     await waitFor(() =>
       expect(useAuthStore.getState().isLoggedIn).toBe(true),
     );
-    expect(useAuthStore.getState().user?.nickname).toBe('tester');
+    expect(useAuthStore.getState().user?.nickname).toBe('test');
     expect(routerMock.replace).toHaveBeenCalledWith('/');
   });
 
@@ -85,7 +82,7 @@ describe('LoginScreen', () => {
 
     fireEvent.changeText(
       screen.getByTestId('login-email-input'),
-      'tester@example.com',
+      'test@gmail.com',
     );
     fireEvent.changeText(screen.getByTestId('login-password-input'), 'wrong-pass');
     fireEvent.press(screen.getByTestId('login-submit-button'));

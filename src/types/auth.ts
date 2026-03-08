@@ -36,6 +36,18 @@ export interface SignupPayload {
   character: string;
 }
 
+export interface PasswordResetValues {
+  email: string;
+  verificationCode: string;
+  password: string;
+  passwordConfirm: string;
+}
+
+export interface PasswordResetPayload {
+  email: string;
+  password: string;
+}
+
 export interface EmailVerificationPayload {
   email: string;
   code: string;

@@ -4,7 +4,9 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  StyleProp,
   View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,10 +14,15 @@ import { colors, spacing } from '@/theme';
 
 interface ScreenContainerProps extends PropsWithChildren {
   scroll?: boolean;
+  contentStyle?: StyleProp<ViewStyle>;
 }
 
-export function ScreenContainer({ children, scroll = false }: ScreenContainerProps) {
-  const content = <View style={styles.content}>{children}</View>;
+export function ScreenContainer({
+  children,
+  scroll = false,
+  contentStyle,
+}: ScreenContainerProps) {
+  const content = <View style={[styles.content, contentStyle]}>{children}</View>;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

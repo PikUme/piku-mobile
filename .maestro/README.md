@@ -6,7 +6,11 @@
 
 - `required/`
   - 커밋 전 필수로 통과해야 하는 Maestro smoke flow를 둡니다.
-  - 현재는 `bootstrap-smoke.yaml`, `login-smoke.yaml`, `signup-smoke.yaml`이 들어 있습니다.
+  - 현재는 `bootstrap-smoke.yaml`, `home-calendar-smoke.yaml`, `login-smoke.yaml`이 들어 있습니다.
+- `local-auth/`
+  - 이메일 인증코드가 필요한 회원가입/비밀번호 재설정 flow를 둡니다.
+  - 현재 앱이 실서버를 바라보는 개발 환경에서는 인증코드를 자동으로 알 수 없으므로 `required/`에서 분리했습니다.
+  - 로컬 mock 환경 또는 별도 테스트 메일 harness가 준비된 경우에만 실행합니다.
 - 루트의 `*.yaml`
   - 기능 구현 전 미리 작성해 둔 템플릿 flow입니다.
   - 해당 기능이 실제로 완성되면 selector와 시나리오를 보정한 뒤 `required/`로 승격합니다.
@@ -18,8 +22,9 @@
   - Expo Go가 아니라 앱 자체가 설치되어 있어야 하므로 `npm run ios:dev`를 먼저 실행하는 방식을 권장합니다.
 - 화면 텍스트/버튼 라벨이 구현본과 다르면 selector를 수정해야 합니다.
 - 로그인/데이터가 필요한 flow는 테스트 계정 또는 테스트 서버가 준비되어 있어야 합니다.
-  - 로컬 mock 기준 로그인 계정은 `tester@example.com / password123!`입니다.
+  - 로컬 mock 기준 로그인 계정은 `test@gmail.com / 1`입니다.
   - 로컬 mock 기준 회원가입 인증코드는 `123456`입니다.
+  - 실서버 개발 환경에서는 회원가입/비밀번호 재설정 인증코드를 자동으로 확보할 수 없으므로 해당 flow는 `local-auth/`에서만 유지합니다.
 
 ## 권장 명령어
 

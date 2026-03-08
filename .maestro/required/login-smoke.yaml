@@ -4,15 +4,6 @@ name: Login smoke
 - launchApp:
     clearState: true
     clearKeychain: true
-- runFlow:
-    when:
-      visible:
-        id: "bottom-tab-more"
-    commands:
-      - tapOn:
-          id: "bottom-tab-more"
-      - tapOn: "로그아웃"
-      - tapOn: "확인"
 - assertVisible:
     id: "bottom-tab-login"
 - tapOn:
@@ -21,10 +12,13 @@ name: Login smoke
     id: "login-email-input"
 - tapOn:
     id: "login-email-input"
-- inputText: "tester@example.com"
+- inputText: "test@gmail.com"
+- tapOn:
+    id: "login-password-visibility-toggle"
 - pressKey: Enter
-- inputText: "password123!"
+- inputText: "1"
 - hideKeyboard
 - tapOn:
     id: "login-submit-button"
-- assertVisible: "tester"
+- assertVisible:
+    id: "bottom-tab-more"

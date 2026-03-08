@@ -61,4 +61,4 @@ npm run test:e2e:smoke
 npm run verify:feature
 ```
 
-- 로컬 백엔드가 내려가 있는 경우 `local` 환경의 로그인 smoke는 `tester@example.com / password123!` 계정으로 mock adapter를 사용합니다.
+- 로컬 백엔드가 내려가 있거나 `EXPO_PUBLIC_API_BASE_URL`이 `localhost/example`를 가리키는 경우, `local` 환경의 로그인 smoke는 `test@gmail.com / 1` 계정으로 mock adapter를 사용합니다.

@@ -9,6 +9,11 @@ const LOCAL_FIXED_CHARACTERS: FixedCharacter[] = [
   { id: 3, type: 'bear', displayImageUrl: '' },
   { id: 4, type: 'rabbit', displayImageUrl: '' },
 ];
+const shouldUseLocalMock =
+  process.env.NODE_ENV !== 'test' &&
+  env.appEnv === 'local' &&
+  (env.apiBaseUrl.includes('localhost') ||
+    env.apiBaseUrl.includes('api.example.com'));
 
 const isRecoverableLocalNetworkError = (error: unknown) => {
   if (env.appEnv !== 'local') {
@@ -29,6 +34,10 @@ const isRecoverableLocalNetworkError = (error: unknown) => {
 };
 
 export async function getFixedCharacters(): Promise<FixedCharacter[]> {
+  if (shouldUseLocalMock) {
+    return LOCAL_FIXED_CHARACTERS;
+  }
+
   try {
     const response = await apiClient.get<FixedCharacter[]>('/characters/fixed');
     return response.data;

@@ -1,6 +1,16 @@
 import 'react-native-gesture-handler/jestSetup';
 
+import { act } from '@testing-library/react-native';
+import { notifyManager } from '@tanstack/react-query';
+
+import { resetMockData } from './tests/mocks/handlers';
 import { server } from './tests/mocks/server';
+
+notifyManager.setNotifyFunction((callback) => {
+  act(() => {
+    callback();
+  });
+});
 
 jest.mock('react-native-reanimated', () => ({}));
 jest.mock('@expo/vector-icons', () => {
@@ -59,6 +69,28 @@ jest.mock('expo-secure-store', () => {
     },
   };
 });
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  requestCameraPermissionsAsync: jest.fn(async () => ({ granted: true })),
+  launchImageLibraryAsync: jest.fn(async () => ({
+    canceled: true,
+    assets: [],
+  })),
+  launchCameraAsync: jest.fn(async () => ({
+    canceled: true,
+    assets: [],
+  })),
+}));
+jest.mock('expo-image-manipulator', () => ({
+  SaveFormat: {
+    JPEG: 'jpeg',
+  },
+  manipulateAsync: jest.fn(async (uri: string) => ({
+    uri,
+    width: 1200,
+    height: 1200,
+  })),
+}));
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'warn' });
@@ -66,6 +98,7 @@ beforeAll(() => {
 
 afterEach(() => {
   server.resetHandlers();
+  resetMockData();
   jest.clearAllMocks();
 });
 

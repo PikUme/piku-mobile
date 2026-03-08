@@ -4,7 +4,8 @@ name: Bootstrap smoke
 - launchApp:
     clearState: true
     clearKeychain: true
-- assertVisible: "Bootstrap Complete"
+- assertVisible:
+    id: "public-feed-title"
 - assertVisible: "홈"
 - assertVisible:
     id: "bottom-tab-home"

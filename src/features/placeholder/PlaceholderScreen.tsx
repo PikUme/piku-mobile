@@ -20,6 +20,7 @@ export function PlaceholderScreen({
   description,
   bullets = [],
   showShellHeader = false,
+  children,
 }: PropsWithChildren<PlaceholderScreenProps>) {
   return (
     <ScreenContainer scroll>
@@ -29,6 +30,7 @@ export function PlaceholderScreen({
       </View>
       <AppHeader subtitle="공통 UI 기반 반영" title={title} />
       <Text style={styles.description}>{description}</Text>
+      {children}
       <View style={styles.section}>
         <Text style={styles.cardTitle}>Next implementation targets</Text>
         {bullets.map((item) => (
