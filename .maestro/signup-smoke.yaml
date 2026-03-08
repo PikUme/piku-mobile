@@ -1,0 +1,68 @@
+appId: com.pikume.mobile
+name: Signup smoke
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- assertVisible:
+    id: "bottom-tab-login"
+- tapOn:
+    id: "bottom-tab-login"
+- tapOn:
+    id: "login-signup-link"
+- assertVisible:
+    id: "signup-email-input"
+- tapOn:
+    id: "signup-email-input"
+- inputText: "new-user@example.com"
+- tapOn:
+    id: "signup-send-verification-button"
+- tapOn:
+    id: "signup-verification-code-input"
+- inputText: "123456"
+- scrollUntilVisible:
+    element:
+      id: "signup-verify-code-button"
+    direction: DOWN
+- tapOn:
+    id: "signup-verify-code-button"
+- tapOn:
+    id: "signup-password-input"
+- inputText: "password123!"
+- tapOn:
+    id: "signup-password-confirm-input"
+- inputText: "password123!"
+- tapOn:
+    id: "signup-nickname-input"
+- inputText: "newbie"
+- scrollUntilVisible:
+    element:
+      id: "signup-agreement-terms-view"
+    direction: DOWN
+- tapOn:
+    id: "signup-agreement-terms-view"
+- assertVisible: "이용약관"
+- scroll
+- scroll
+- tapOn:
+    id: "signup-policy-agree-button"
+- tapOn:
+    id: "signup-agreement-privacy-view"
+- assertVisible: "개인정보 처리방침"
+- scroll
+- scroll
+- tapOn:
+    id: "signup-policy-agree-button"
+- scrollUntilVisible:
+    element:
+      id: "signup-next-button"
+    direction: DOWN
+- tapOn:
+    id: "signup-next-button"
+- assertVisible:
+    id: "signup-character-option-1"
+- tapOn:
+    id: "signup-character-option-1"
+- tapOn:
+    id: "signup-submit-button"
+- assertVisible: "로그인"
