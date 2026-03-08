@@ -37,6 +37,24 @@ const HOME_FRIENDS: Friend[] = [
   },
 ];
 
+const FRIEND_REQUESTS: Friend[] = [
+  {
+    userId: 'user-8',
+    nickname: '다온',
+    avatar: '',
+  },
+  {
+    userId: 'user-9',
+    nickname: '시우',
+    avatar: '',
+  },
+  {
+    userId: 'user-10',
+    nickname: '지안',
+    avatar: '',
+  },
+];
+
 const SEARCH_USERS: Friend[] = [
   {
     userId: 'user-2',
@@ -198,6 +216,20 @@ export const handlers = [
       totalElements: HOME_FRIENDS.length,
     });
   }),
+  http.get(`${API_BASE_URL}/relation/requests`, async ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get('page') ?? '0');
+    const size = Number(url.searchParams.get('size') ?? '20');
+    const start = page * size;
+    const end = start + size;
+    const requests = FRIEND_REQUESTS.slice(start, end);
+
+    return HttpResponse.json({
+      content: requests,
+      last: end >= FRIEND_REQUESTS.length,
+      totalElements: FRIEND_REQUESTS.length,
+    });
+  }),
   http.get(`${API_BASE_URL}/search`, async ({ request }) => {
     const url = new URL(request.url);
     const keyword = (url.searchParams.get('keyword') ?? '').trim().toLowerCase();
@@ -222,6 +254,15 @@ export const handlers = [
       isAccepted: false,
       message: '친구 요청을 보냈습니다.',
     });
+  }),
+  http.delete(`${API_BASE_URL}/relation/requests/:userId`, async () => {
+    return HttpResponse.json({
+      isAccepted: false,
+      message: '친구 요청을 거절했습니다.',
+    });
+  }),
+  http.delete(`${API_BASE_URL}/relation/:userId`, async () => {
+    return HttpResponse.text('', { status: 204 });
   }),
   http.delete(`${API_BASE_URL}/relation/cancel/:userId`, async () => {
     return HttpResponse.json({

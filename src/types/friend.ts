@@ -17,6 +17,14 @@ export interface PaginatedFriendsResponse {
   totalElements: number;
 }
 
+export type FriendRequest = Friend;
+
+export interface PaginatedFriendRequestsResponse {
+  requests: FriendRequest[];
+  hasNext: boolean;
+  totalElements: number;
+}
+
 export interface FriendRequestDto {
   toUserId: string;
 }

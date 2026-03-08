@@ -3,9 +3,11 @@ import { env } from '@/lib/env';
 import type { ApiError } from '@/lib/api/errors';
 import type {
   Friend,
+  FriendRequest,
   FriendRequestDto,
   FriendRequestResponseDto,
   PaginatedFriendsResponse,
+  PaginatedFriendRequestsResponse,
 } from '@/types/friend';
 
 const LOCAL_HOME_FRIENDS: Friend[] = [
@@ -22,6 +24,24 @@ const LOCAL_HOME_FRIENDS: Friend[] = [
   {
     userId: 'user-4',
     nickname: '하루',
+    avatar: '',
+  },
+];
+
+const LOCAL_FRIEND_REQUESTS: FriendRequest[] = [
+  {
+    userId: 'user-8',
+    nickname: '다온',
+    avatar: '',
+  },
+  {
+    userId: 'user-9',
+    nickname: '시우',
+    avatar: '',
+  },
+  {
+    userId: 'user-10',
+    nickname: '지안',
     avatar: '',
   },
 ];
@@ -58,6 +78,21 @@ function getLocalFriendPage(page: number, size: number): PaginatedFriendsRespons
     friends,
     hasNext: end < LOCAL_HOME_FRIENDS.length,
     totalElements: LOCAL_HOME_FRIENDS.length,
+  };
+}
+
+function getLocalFriendRequestPage(
+  page: number,
+  size: number,
+): PaginatedFriendRequestsResponse {
+  const start = page * size;
+  const end = start + size;
+  const requests = LOCAL_FRIEND_REQUESTS.slice(start, end);
+
+  return {
+    requests,
+    hasNext: end < LOCAL_FRIEND_REQUESTS.length,
+    totalElements: LOCAL_FRIEND_REQUESTS.length,
   };
 }
 
@@ -153,6 +188,105 @@ export async function cancelFriendRequest(
         isAccepted: false,
         message: '친구 요청을 취소했습니다.',
       };
+    }
+
+    throw error;
+  }
+}
+
+export async function getFriendRequests(
+  page: number,
+  size: number,
+): Promise<PaginatedFriendRequestsResponse> {
+  if (shouldUseLocalFriendMock) {
+    return getLocalFriendRequestPage(page, size);
+  }
+
+  try {
+    const response = await apiClient.get('/relation/requests', {
+      params: { page, size },
+    });
+
+    return {
+      requests: response.data.content,
+      hasNext: !response.data.last,
+      totalElements: response.data.totalElements,
+    };
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      return getLocalFriendRequestPage(page, size);
+    }
+
+    throw error;
+  }
+}
+
+export async function acceptFriendRequest(
+  userId: string,
+): Promise<FriendRequestResponseDto> {
+  if (shouldUseLocalFriendMock) {
+    return {
+      isAccepted: true,
+      message: '친구 요청을 수락했습니다.',
+    };
+  }
+
+  try {
+    const requestData: FriendRequestDto = { toUserId: userId };
+    const response = await apiClient.post<FriendRequestResponseDto>(
+      '/relation',
+      requestData,
+    );
+    return response.data;
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      return {
+        isAccepted: true,
+        message: '친구 요청을 수락했습니다.',
+      };
+    }
+
+    throw error;
+  }
+}
+
+export async function rejectFriendRequest(
+  userId: string,
+): Promise<FriendRequestResponseDto> {
+  if (shouldUseLocalFriendMock) {
+    return {
+      isAccepted: false,
+      message: '친구 요청을 거절했습니다.',
+    };
+  }
+
+  try {
+    const response = await apiClient.delete<FriendRequestResponseDto>(
+      `/relation/requests/${userId}`,
+    );
+    return response.data;
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      return {
+        isAccepted: false,
+        message: '친구 요청을 거절했습니다.',
+      };
+    }
+
+    throw error;
+  }
+}
+
+export async function deleteFriend(userId: string): Promise<void> {
+  if (shouldUseLocalFriendMock) {
+    return;
+  }
+
+  try {
+    await apiClient.delete(`/relation/${userId}`);
+  } catch (error) {
+    if (isRecoverableLocalNetworkError(error)) {
+      return;
     }
 
     throw error;
