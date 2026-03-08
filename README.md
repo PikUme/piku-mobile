@@ -57,4 +57,8 @@ npm run web
 
 ```bash
 npm test -- --runInBand
+npm run test:e2e:smoke
+npm run verify:feature
 ```
+
+- 로컬 백엔드가 내려가 있는 경우 `local` 환경의 로그인 smoke는 `tester@example.com / password123!` 계정으로 mock adapter를 사용합니다.
