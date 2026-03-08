@@ -4,6 +4,7 @@ import {
   buildLocalDiaryDetailMock,
   buildLocalMonthlyDiaryMock,
 } from '@/lib/api/diaries';
+import { buildLocalProfilePreviewMock } from '@/lib/api/profile';
 import {
   buildLocalRepliesPageMock,
   buildLocalRootCommentPageMock,
@@ -297,6 +298,10 @@ export const handlers = [
   http.get(`${API_BASE_URL}/diary/:diaryId`, ({ params }) => {
     const diaryId = Number(params.diaryId);
     return HttpResponse.json(buildLocalDiaryDetailMock(diaryId));
+  }),
+  http.get(`${API_BASE_URL}/users/:userId/profile-preview`, ({ params }) => {
+    const userId = String(params.userId ?? 'user-1');
+    return HttpResponse.json(buildLocalProfilePreviewMock(userId));
   }),
   http.delete(`${API_BASE_URL}/diary/:diaryId`, () => {
     return HttpResponse.text('', { status: 204 });
