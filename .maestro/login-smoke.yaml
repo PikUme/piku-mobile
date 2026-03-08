@@ -1,0 +1,30 @@
+appId: com.pikume.mobile
+name: Login smoke
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- runFlow:
+    when:
+      visible:
+        id: "bottom-tab-more"
+    commands:
+      - tapOn:
+          id: "bottom-tab-more"
+      - tapOn: "로그아웃"
+      - tapOn: "확인"
+- assertVisible:
+    id: "bottom-tab-login"
+- tapOn:
+    id: "bottom-tab-login"
+- assertVisible:
+    id: "login-email-input"
+- tapOn:
+    id: "login-email-input"
+- inputText: "tester@example.com"
+- pressKey: Enter
+- inputText: "password123!"
+- hideKeyboard
+- tapOn:
+    id: "login-submit-button"
+- assertVisible: "tester"
