@@ -27,6 +27,23 @@ describe('resolvePushNotificationRoute', () => {
     });
   });
 
+  it('uses senderUserId when the notification payload does not include diaryUserId', () => {
+    expect(
+      resolvePushNotificationRoute({
+        senderUserId: 'user-9',
+        date: '2026-03-01',
+        diaryId: 202603010,
+      }),
+    ).toEqual({
+      pathname: '/profile/[userId]/calendar',
+      params: {
+        userId: 'user-9',
+        date: '2026-03-01',
+        diaryId: '202603010',
+      },
+    });
+  });
+
   it('returns null when no supported routing payload exists', () => {
     expect(resolvePushNotificationRoute({})).toBeNull();
   });
