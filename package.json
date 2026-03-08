@@ -15,6 +15,7 @@
     "test:logic": "jest --config ./jest.config.cjs --runInBand",
     "test:watch": "jest --watch --config ./jest.config.cjs",
     "test:coverage": "jest --coverage --config ./jest.config.cjs",
+    "test:ci": "npm run lint && npx tsc --noEmit && npm run test:coverage -- --runInBand",
     "test:e2e:smoke": "./scripts/run-maestro-smoke.sh",
     "verify:feature": "./scripts/verify-feature.sh",
     "commit:verified": "./scripts/commit-verified.sh"

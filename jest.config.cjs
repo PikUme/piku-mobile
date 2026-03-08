@@ -12,6 +12,15 @@ module.exports = {
     '!tests/mocks/**',
     '!tests/fixtures/**',
   ],
+  coverageReporters: ['text', 'lcov'],
+  coverageThreshold: {
+    global: {
+      statements: 70,
+      branches: 60,
+      functions: 75,
+      lines: 70,
+    },
+  },
   moduleNameMapper: {
     '^msw/node$': '<rootDir>/node_modules/msw/lib/node/index.js',
     '^@/(.*)$': '<rootDir>/src/$1',
