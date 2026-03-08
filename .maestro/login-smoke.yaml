@@ -20,5 +20,8 @@ name: Login smoke
 - hideKeyboard
 - tapOn:
     id: "login-submit-button"
+- tapOn:
+    text: "허용 안 함"
+    optional: true
 - assertVisible:
     id: "bottom-tab-more"

@@ -16,6 +16,9 @@ name: Home calendar smoke
 - inputText: "1"
 - tapOn:
     id: "login-submit-button"
+- tapOn:
+    text: "허용 안 함"
+    optional: true
 - assertVisible:
     id: "home-calendar-grid"
 - assertVisible:
