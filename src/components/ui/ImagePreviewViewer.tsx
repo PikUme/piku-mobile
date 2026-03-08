@@ -33,7 +33,11 @@ export function ImagePreviewViewer({
           <Text numberOfLines={1} style={styles.title}>
             {title ?? '이미지 미리보기'}
           </Text>
-          <Pressable onPress={onClose} style={styles.closeButton}>
+          <Pressable
+            accessibilityLabel="이미지 미리보기 닫기"
+            onPress={onClose}
+            style={styles.closeButton}
+            testID="image-preview-close-button">
             <Text style={styles.closeLabel}>닫기</Text>
           </Pressable>
         </View>

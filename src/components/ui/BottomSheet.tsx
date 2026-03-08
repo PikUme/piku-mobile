@@ -39,7 +39,12 @@ export function BottomSheet({
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}>
-        <Pressable style={styles.scrim} onPress={onClose} />
+        <Pressable
+          accessibilityLabel="바텀시트 닫기 배경"
+          onPress={onClose}
+          style={styles.scrim}
+          testID="bottom-sheet-scrim"
+        />
         <View style={[styles.sheet, { maxHeight: `${heightRatio * 100}%` }]}>
           <View style={styles.handle} />
           {title ? <Text style={styles.title}>{title}</Text> : null}
