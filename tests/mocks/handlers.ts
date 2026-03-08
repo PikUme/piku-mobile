@@ -37,6 +37,34 @@ const HOME_FRIENDS: Friend[] = [
   },
 ];
 
+const SEARCH_USERS: Friend[] = [
+  {
+    userId: 'user-2',
+    nickname: '도리',
+    avatar: '',
+  },
+  {
+    userId: 'user-3',
+    nickname: '도영',
+    avatar: '',
+  },
+  {
+    userId: 'user-4',
+    nickname: '도하',
+    avatar: '',
+  },
+  {
+    userId: 'user-5',
+    nickname: '하루',
+    avatar: '',
+  },
+  {
+    userId: 'user-6',
+    nickname: '모아',
+    avatar: '',
+  },
+];
+
 const FEED_ITEMS: FeedDiary[] = [
   {
     diaryId: 301,
@@ -168,6 +196,25 @@ export const handlers = [
       content: friends,
       last: end >= HOME_FRIENDS.length,
       totalElements: HOME_FRIENDS.length,
+    });
+  }),
+  http.get(`${API_BASE_URL}/search`, async ({ request }) => {
+    const url = new URL(request.url);
+    const keyword = (url.searchParams.get('keyword') ?? '').trim().toLowerCase();
+    const page = Number(url.searchParams.get('page') ?? '0');
+    const size = Number(url.searchParams.get('size') ?? '10');
+    const filteredUsers = keyword
+      ? SEARCH_USERS.filter((user) => user.nickname.toLowerCase().includes(keyword))
+      : [];
+    const start = page * size;
+    const end = start + size;
+
+    return HttpResponse.json({
+      content: filteredUsers.slice(start, end),
+      last: end >= filteredUsers.length,
+      totalElements: filteredUsers.length,
+      number: page,
+      size,
     });
   }),
   http.post(`${API_BASE_URL}/relation`, async () => {
