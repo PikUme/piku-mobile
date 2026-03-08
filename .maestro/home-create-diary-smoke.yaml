@@ -1,0 +1,9 @@
+appId: com.pikume.mobile
+---
+- launchApp
+- assertVisible: "PikUme"
+- tapOn: "오늘의 일기"
+- assertVisible: "일기 작성"
+- tapOn: "오늘의 하루를 기록해보세요..."
+- inputText: "Maestro smoke test diary"
+- tapOn: "완료"

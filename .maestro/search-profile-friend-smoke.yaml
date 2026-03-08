@@ -1,0 +1,10 @@
+appId: com.pikume.mobile
+---
+- launchApp
+- tapOn: "검색"
+- tapOn: "닉네임을 입력하세요..."
+- inputText: "friend"
+- assertVisible: "friend"
+- tapOn: "friend"
+- assertVisible: "프로필"
+- tapOn: "친구 추가"

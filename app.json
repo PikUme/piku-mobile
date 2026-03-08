@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "PikUme",
+    "slug": "pikume-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "pikume",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "icon": "./assets/icon.png",
+      "bundleIdentifier": "com.pikume.mobile"
+    },
+    "android": {
+      "package": "com.pikume.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

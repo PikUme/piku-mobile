@@ -1,0 +1,7 @@
+appId: com.pikume.mobile
+---
+- launchApp
+- tapOn: "알림"
+- assertVisible: "알림"
+- tapOn: "새 댓글이 달렸습니다."
+- assertVisible: "댓글 보기"

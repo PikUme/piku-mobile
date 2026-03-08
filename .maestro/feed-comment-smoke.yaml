@@ -1,0 +1,10 @@
+appId: com.pikume.mobile
+---
+- launchApp
+- tapOn: "피드"
+- assertVisible: "피드"
+- tapOn: "댓글"
+- assertVisible: "댓글"
+- tapOn: "댓글 달기..."
+- inputText: "smoke test comment"
+- tapOn: "게시"
