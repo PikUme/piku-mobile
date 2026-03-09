@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Image,
@@ -16,11 +16,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import type { FeedDiary } from '@/types/diary';
 import { FriendshipStatus } from '@/types/friend';
 import { colors, radius, shadows, spacing, typography } from '@/theme';
-import {
-  formatFeedDate,
-  formatTimeAgo,
-  getFeedPreviewText,
-} from '@/features/feed/lib/format';
+import { formatFeedDate, formatTimeAgo } from '@/features/feed/lib/format';
 
 interface FeedCardProps {
   post: FeedDiary;
@@ -45,12 +41,17 @@ export function FeedCard({
 }: FeedCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
   const { width } = useWindowDimensions();
   const imageSize = Math.max(width - spacing['2xl'] * 2, 280);
 
-  const preview = useMemo(() => getFeedPreviewText(post.content), [post.content]);
   const canShowFriendAction = isLoggedIn && viewerUserId !== post.userId;
   const friendshipStatus = post.friendStatus ?? FriendshipStatus.NONE;
+
+  useEffect(() => {
+    setIsExpanded(false);
+    setCanExpand(false);
+  }, [post.content, post.diaryId]);
 
   const handleImageMomentumEnd = (
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -185,12 +186,22 @@ export function FeedCard({
           onPress={() => onOpenDetail(post)}
           style={({ pressed }) => pressed && styles.pressed}
           testID={`feed-content-open-${post.diaryId}`}>
-          <Text style={styles.contentText}>
+          <Text
+            numberOfLines={isExpanded ? undefined : 1}
+            onTextLayout={(event) => {
+              if (isExpanded) {
+                return;
+              }
+
+              setCanExpand(event.nativeEvent.lines.length > 1);
+            }}
+            style={styles.contentText}
+            testID={`feed-content-text-${post.diaryId}`}>
             <Text style={styles.contentNickname}>{post.nickname} </Text>
-            {isExpanded ? post.content : preview.text}
+            {post.content}
           </Text>
         </Pressable>
-        {!isExpanded && preview.truncated ? (
+        {!isExpanded && canExpand ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => setIsExpanded(true)}

@@ -39,11 +39,29 @@ describe('AppTopBar', () => {
 
     const screen = render(<AppTopBar />);
 
-    expect(screen.getByText('tester')).toBeTruthy();
+    expect(screen.getByTestId('shell-user-name')).toBeTruthy();
     expect(screen.getByText('3')).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText('알림'));
     expect(routerMock.push).toHaveBeenCalledWith('/notifications');
     expect(screen.queryByLabelText('더보기')).toBeNull();
+  });
+
+  it('renders the brand variant with notifications for logged in users', () => {
+    useAuthStore.setState({
+      isHydrated: true,
+      isLoggedIn: true,
+      user: {
+        id: 'user-1',
+        email: 'tester@example.com',
+        nickname: 'tester',
+      },
+    });
+
+    const screen = render(<AppTopBar variant="brand" />);
+
+    expect(screen.getByTestId('shell-brand-title')).toBeTruthy();
+    expect(screen.queryByTestId('shell-user-name')).toBeNull();
+    expect(screen.getByLabelText('알림')).toBeTruthy();
   });
 });

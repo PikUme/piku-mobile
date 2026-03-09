@@ -30,6 +30,7 @@ describe('SearchScreen', () => {
 
     expect(screen.getByText('검색어를 입력해주세요.')).toBeTruthy();
     expect(screen.getByTestId('search-input')).toBeTruthy();
+    expect(screen.queryByTestId('shell-brand-title')).toBeNull();
   });
 
   it('debounces input before requesting search results', async () => {

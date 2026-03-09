@@ -12,6 +12,7 @@ import { colors, radius, spacing, typography } from '@/theme';
 interface AppTopBarProps {
   title?: string;
   subtitle?: string;
+  variant?: 'auto' | 'brand';
 }
 
 function IconChipButton({
@@ -38,19 +39,24 @@ function IconChipButton({
   );
 }
 
-export function AppTopBar({ title = 'PikUme', subtitle }: AppTopBarProps) {
+export function AppTopBar({
+  title = 'PikUme',
+  subtitle,
+  variant = 'auto',
+}: AppTopBarProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const shouldShowUserProfile = variant !== 'brand' && isLoggedIn && user;
 
   return (
     <View style={styles.container}>
-      {isLoggedIn && user ? (
+      {shouldShowUserProfile ? (
         <View style={styles.userBlock}>
           <Avatar name={user.nickname} size={40} source={user.avatar ?? null} />
           <View style={styles.userTextBlock}>
-            <Text numberOfLines={1} style={styles.userName}>
+            <Text numberOfLines={1} style={styles.userName} testID="shell-user-name">
               {user.nickname}
             </Text>
             <Text numberOfLines={1} style={styles.userCaption}>
@@ -60,10 +66,10 @@ export function AppTopBar({ title = 'PikUme', subtitle }: AppTopBarProps) {
         </View>
       ) : (
         <View style={styles.brandBlock}>
-          <Text style={styles.brandTitle}>{title}</Text>
-          <Text style={styles.brandCaption}>
-            {subtitle ?? '비로그인 사용자는 공개 피드를 둘러볼 수 있습니다.'}
+          <Text style={styles.brandTitle} testID="shell-brand-title">
+            {title}
           </Text>
+          {subtitle ? <Text style={styles.brandCaption}>{subtitle}</Text> : null}
         </View>
       )}
 

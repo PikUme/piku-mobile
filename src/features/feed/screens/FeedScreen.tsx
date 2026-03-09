@@ -84,10 +84,6 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
     [commentCountOverrides, rawItems, statusOverrides],
   );
 
-  const shellTitle = entryPoint === 'home' ? '홈' : '피드';
-  const subtitle = isLoggedIn
-    ? '친구와 공개 일기를 카드형 리스트로 탐색합니다.'
-    : '비로그인 사용자는 공개 일기만 둘러볼 수 있습니다.';
   const requestNextPage = () => {
     void (fetchNextPage as () => Promise<unknown>)();
   };
@@ -148,7 +144,7 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
 
   const headerComponent = (
     <View style={styles.headerContent}>
-      <AppTopBar subtitle={subtitle} title={shellTitle} />
+      <AppTopBar title="PikUme" variant="brand" />
       {!isLoggedIn ? (
         <View style={styles.guestBanner}>
           <Text style={styles.guestEyebrow}>PUBLIC FEED</Text>
@@ -284,14 +280,6 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
             ...current,
             [diaryId]: count,
           }));
-          setSelectedPost((current) =>
-            current && current.diaryId === diaryId
-              ? {
-                  ...current,
-                  commentCount: count,
-                }
-              : current,
-          );
         }}
         onOpenDetail={handleOpenDetail}
         post={selectedPost}

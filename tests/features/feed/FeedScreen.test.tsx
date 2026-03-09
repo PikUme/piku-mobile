@@ -59,6 +59,8 @@ describe('FeedScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
 
+    expect(screen.getByTestId('shell-brand-title')).toBeTruthy();
+    expect(screen.queryByTestId('shell-user-name')).toBeNull();
     expect(screen.getAllByText('피쿠').length).toBeGreaterThan(0);
     fireEvent.press(screen.getByTestId('feed-card-open-301'));
 
@@ -79,6 +81,7 @@ describe('FeedScreen', () => {
 
     expect(screen.getByText('댓글 4개')).toBeTruthy();
     expect(screen.getByTestId('feed-comment-sheet-body')).toBeTruthy();
+    expect(screen.queryByTestId('feed-comment-sheet-preview-image')).toBeNull();
 
     fireEvent.press(screen.getByTestId('feed-comment-sheet-detail-button'));
 
@@ -198,12 +201,16 @@ describe('FeedScreen', () => {
     const screen = renderWithProviders(<FeedScreen />);
 
     await waitFor(() => expect(screen.getByTestId('feed-card-901')).toBeTruthy());
+    fireEvent(screen.getByTestId('feed-content-text-901'), 'textLayout', {
+      nativeEvent: {
+        lines: [{ text: 'user-901 본문 일부' }, { text: '본문 다음 줄' }],
+      },
+    });
+
+    expect(screen.getByTestId('feed-content-more-901')).toBeTruthy();
     fireEvent.press(screen.getByTestId('feed-content-more-901'));
 
-    expect(
-      screen.getByText(
-        'user-901 이 본문은 충분히 길어서 더 보기 버튼이 노출되어야 합니다. 사용자가 탭하면 전체 문자열을 확인할 수 있어야 합니다.',
-      ),
-    ).toBeTruthy();
+    expect(screen.queryByTestId('feed-content-more-901')).toBeNull();
+    expect(screen.getByTestId('feed-content-text-901').props.numberOfLines).toBeUndefined();
   });
 });

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppTopBar } from '@/components/shell/AppTopBar';
 import { Avatar } from '@/components/ui/Avatar';
 import { AppTextField } from '@/components/ui/AppTextField';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -82,10 +81,6 @@ export function SearchScreen() {
 
   const headerComponent = (
     <View style={styles.headerContent}>
-      <AppTopBar
-        subtitle="닉네임으로 사용자를 검색하고 프로필로 이동합니다."
-        title="검색"
-      />
       <View style={styles.searchCard}>
         <Text style={styles.searchTitle}>사용자 검색</Text>
         <AppTextField

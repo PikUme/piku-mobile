@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { AppButton } from '@/components/ui/AppButton';
@@ -637,9 +637,6 @@ export function DiaryCommentSheet({
                 </Text>
               </View>
             </View>
-            {diary.imgUrls?.[0] ? (
-              <Image source={{ uri: diary.imgUrls[0] }} style={styles.previewImage} />
-            ) : null}
             {onOpenDetail ? (
               <AppButton
                 fullWidth={false}
@@ -692,12 +689,6 @@ const styles = StyleSheet.create({
   previewBody: {
     ...typography.body,
     color: colors.text,
-  },
-  previewImage: {
-    width: 88,
-    height: 88,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
   },
   commentsScroll: {
     maxHeight: 340,
