@@ -44,6 +44,7 @@ export function FeedCard({
   const [canExpand, setCanExpand] = useState(false);
   const { width } = useWindowDimensions();
   const imageSize = Math.max(width - spacing['2xl'] * 2, 280);
+  const collapsedPreviewText = post.content.replace(/\s+/g, ' ').trim();
 
   const canShowFriendAction = isLoggedIn && viewerUserId !== post.userId;
   const friendshipStatus = post.friendStatus ?? FriendshipStatus.NONE;
@@ -189,7 +190,7 @@ export function FeedCard({
             style={styles.contentMeasureText}
             testID={`feed-content-measure-${post.diaryId}`}>
             <Text style={styles.contentNickname}>{post.nickname} </Text>
-            {post.content}
+            {collapsedPreviewText}
           </Text>
         ) : null}
         {canExpand && !isExpanded ? (
@@ -205,7 +206,7 @@ export function FeedCard({
                 style={styles.contentText}
                 testID={`feed-content-text-${post.diaryId}`}>
                 <Text style={styles.contentNickname}>{post.nickname} </Text>
-                {post.content}
+                {collapsedPreviewText}
               </Text>
             </Pressable>
             <Pressable

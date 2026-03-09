@@ -227,7 +227,7 @@ describe('FeedScreen', () => {
           items: [
             buildFeedItem(901, {
               content:
-                '이 본문은 충분히 길어서 더 보기 버튼이 노출되어야 합니다. 사용자가 탭하면 전체 문자열을 확인할 수 있어야 합니다.',
+                '이 본문은 충분히 길어서 더 보기 버튼이 노출되어야 합니다.\n사용자가 탭하면 전체 문자열을 확인할 수 있어야 합니다.',
             }),
           ],
           nextCursor: null,
@@ -247,6 +247,7 @@ describe('FeedScreen', () => {
 
     expect(screen.getByTestId('feed-content-more-901')).toBeTruthy();
     expect(screen.getByText('더보기')).toBeTruthy();
+    expect(screen.getByTestId('feed-content-text-901').props.children[1]).not.toContain('\n');
     fireEvent.press(screen.getByTestId('feed-content-more-901'));
 
     expect(screen.queryByTestId('feed-content-more-901')).toBeNull();
