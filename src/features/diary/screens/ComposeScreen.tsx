@@ -22,7 +22,6 @@ import {
   MAX_TOTAL_PHOTOS,
   buildDiaryCreatePayload,
   getAvailablePhotoSlots,
-  getUserPhotoCount,
   moveComposePhoto,
 } from '@/features/diary/lib/compose';
 import { compressPickedImage, createAiComposePhoto } from '@/features/diary/lib/media';
@@ -142,6 +141,7 @@ export function ComposeScreen() {
   const [content, setContent] = useState('');
   const [photos, setPhotos] = useState<ComposePhoto[]>([]);
   const [isPrivacySheetVisible, setIsPrivacySheetVisible] = useState(false);
+  const [isPhotoSourceSheetVisible, setIsPhotoSourceSheetVisible] = useState(false);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -158,7 +158,6 @@ export function ComposeScreen() {
   const remainingAiRequests = aiRemainingQuery.data ?? null;
 
   const availablePhotoSlots = useMemo(() => getAvailablePhotoSlots(photos), [photos]);
-  const userPhotoCount = useMemo(() => getUserPhotoCount(photos), [photos]);
   const formattedDate = useMemo(() => formatComposeDateLabel(selectedDate), [selectedDate]);
   const selectedPrivacyOption = PRIVACY_OPTIONS.find((option) => option.value === privacy);
 
@@ -228,6 +227,8 @@ export function ComposeScreen() {
   };
 
   const handlePickFromLibrary = async () => {
+    setIsPhotoSourceSheetVisible(false);
+
     if (availablePhotoSlots <= 0) {
       setMessageBanner(`사진은 최대 ${MAX_TOTAL_PHOTOS}장까지 추가할 수 있습니다.`, true);
       return;
@@ -252,6 +253,8 @@ export function ComposeScreen() {
   };
 
   const handleTakePhoto = async () => {
+    setIsPhotoSourceSheetVisible(false);
+
     if (availablePhotoSlots <= 0) {
       setMessageBanner(`사진은 최대 ${MAX_TOTAL_PHOTOS}장까지 추가할 수 있습니다.`, true);
       return;
@@ -318,9 +321,16 @@ export function ComposeScreen() {
     setMessageBanner('사진을 삭제했습니다.');
   };
 
-  const handleMovePhoto = (fromIndex: number, direction: 'left' | 'right') => {
-    const toIndex = direction === 'left' ? fromIndex - 1 : fromIndex + 1;
-    setPhotos((current) => moveComposePhoto(current, fromIndex, toIndex));
+  const handlePromotePhoto = (photoId: string) => {
+    setPhotos((current) => {
+      const fromIndex = current.findIndex((photo) => photo.id === photoId);
+      if (fromIndex <= 0) {
+        return current;
+      }
+
+      return moveComposePhoto(current, fromIndex, 0);
+    });
+    setMessageBanner('사진 순서를 변경했습니다.');
   };
 
   const handleSave = async () => {
@@ -412,28 +422,21 @@ export function ComposeScreen() {
               title="AI 사진"
             />
             <ActionCard
-              caption={`${userPhotoCount}장`}
-              disabled={isPickingImages || availablePhotoSlots <= 0}
-              icon="images-outline"
-              loading={isPickingImages}
-              onPress={() => {
-                void handlePickFromLibrary();
-              }}
-              testID="compose-library-button"
-              title="앨범"
-            />
-            <ActionCard
               caption={`${photos.length}/${MAX_TOTAL_PHOTOS}`}
               disabled={isPickingImages || availablePhotoSlots <= 0}
-              icon="camera-outline"
+              icon="add-circle-outline"
               loading={isPickingImages}
               onPress={() => {
-                void handleTakePhoto();
+                setIsPhotoSourceSheetVisible(true);
               }}
-              testID="compose-camera-button"
-              title="카메라"
+              testID="compose-add-photo-button"
+              title="사진 추가"
             />
           </View>
+
+          <Text style={styles.photoHelperText}>
+            사진을 누르면 대표 사진으로 이동하고, 길게 누르면 크게 볼 수 있습니다.
+          </Text>
 
           <ScrollView
             horizontal
@@ -444,6 +447,15 @@ export function ComposeScreen() {
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
+                    if (index === 0) {
+                      setPreviewUri(photo.previewUri);
+                      setIsPreviewVisible(true);
+                      return;
+                    }
+
+                    handlePromotePhoto(photo.id);
+                  }}
+                  onLongPress={() => {
                     setPreviewUri(photo.previewUri);
                     setIsPreviewVisible(true);
                   }}
@@ -457,40 +469,20 @@ export function ComposeScreen() {
                       <Text style={styles.coverBadgeLabel}>대표 사진</Text>
                     </View>
                   ) : null}
-                </Pressable>
-                <View style={styles.photoActions}>
                   <Pressable
                     accessibilityRole="button"
-                    disabled={index === 0}
-                    onPress={() => handleMovePhoto(index, 'left')}
+                    onPress={(event) => {
+                      event?.stopPropagation?.();
+                      handleRemovePhoto(photo.id);
+                    }}
                     style={({ pressed }) => [
-                      styles.photoActionButton,
-                      index === 0 && styles.photoActionButtonDisabled,
-                      pressed && index !== 0 && styles.pressed,
+                      styles.photoRemoveButton,
+                      pressed && styles.pressed,
                     ]}
-                    testID={`compose-photo-move-left-${photo.id}`}>
-                    <Ionicons color={colors.text} name="chevron-back" size={16} />
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => handleRemovePhoto(photo.id)}
-                    style={({ pressed }) => [styles.photoActionButton, pressed && styles.pressed]}
                     testID={`compose-photo-remove-${photo.id}`}>
-                    <Ionicons color={colors.danger} name="close" size={16} />
+                    <Ionicons color={colors.white} name="close" size={16} />
                   </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    disabled={index === photos.length - 1}
-                    onPress={() => handleMovePhoto(index, 'right')}
-                    style={({ pressed }) => [
-                      styles.photoActionButton,
-                      index === photos.length - 1 && styles.photoActionButtonDisabled,
-                      pressed && index !== photos.length - 1 && styles.pressed,
-                    ]}
-                    testID={`compose-photo-move-right-${photo.id}`}>
-                    <Ionicons color={colors.text} name="chevron-forward" size={16} />
-                  </Pressable>
-                </View>
+                </Pressable>
               </View>
             ))}
           </ScrollView>
@@ -551,6 +543,45 @@ export function ComposeScreen() {
           </View>
         </ScrollView>
       </ScreenContainer>
+
+      <BottomSheet
+        description="앨범에서 여러 장을 고르거나 카메라로 바로 촬영할 수 있습니다."
+        onClose={() => setIsPhotoSourceSheetVisible(false)}
+        title="사진 추가"
+        visible={isPhotoSourceSheetVisible}>
+        <View style={styles.photoSourceSheetContent}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              void handlePickFromLibrary();
+            }}
+            style={({ pressed }) => [styles.photoSourceOption, pressed && styles.pressed]}
+            testID="compose-photo-source-library">
+            <Ionicons color={colors.text} name="images-outline" size={20} />
+            <View style={styles.photoSourceText}>
+              <Text style={styles.photoSourceTitle}>앨범에서 선택</Text>
+              <Text style={styles.photoSourceDescription}>
+                여러 장을 한 번에 선택할 수 있습니다.
+              </Text>
+            </View>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              void handleTakePhoto();
+            }}
+            style={({ pressed }) => [styles.photoSourceOption, pressed && styles.pressed]}
+            testID="compose-photo-source-camera">
+            <Ionicons color={colors.text} name="camera-outline" size={20} />
+            <View style={styles.photoSourceText}>
+              <Text style={styles.photoSourceTitle}>카메라 촬영</Text>
+              <Text style={styles.photoSourceDescription}>
+                지금 바로 사진을 촬영해 추가합니다.
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+      </BottomSheet>
 
       <BottomSheet
         description="저장 시 마지막으로 선택한 값이 다음 작성 화면의 기본값으로 유지됩니다."
@@ -687,12 +718,15 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.mutedText,
   },
+  photoHelperText: {
+    ...typography.caption,
+    color: colors.mutedText,
+  },
   photoStrip: {
     gap: spacing.md,
   },
   photoCard: {
     width: 128,
-    gap: spacing.sm,
   },
   photoPreviewFrame: {
     width: 128,
@@ -704,6 +738,17 @@ const styles = StyleSheet.create({
   photoPreviewImage: {
     width: '100%',
     height: '100%',
+  },
+  photoRemoveButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 28,
+    height: 28,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(17, 24, 39, 0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   coverBadge: {
     position: 'absolute',
@@ -719,24 +764,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     textAlign: 'center',
     fontWeight: '700',
-  },
-  photoActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.xs,
-  },
-  photoActionButton: {
-    flex: 1,
-    minHeight: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  photoActionButtonDisabled: {
-    opacity: 0.35,
   },
   metaRow: {
     flexDirection: 'row',
@@ -815,6 +842,32 @@ const styles = StyleSheet.create({
   },
   counterLabel: {
     alignSelf: 'flex-end',
+    ...typography.caption,
+    color: colors.mutedText,
+  },
+  photoSourceSheetContent: {
+    gap: spacing.sm,
+  },
+  photoSourceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  photoSourceText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  photoSourceTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  photoSourceDescription: {
     ...typography.caption,
     color: colors.mutedText,
   },

@@ -104,11 +104,12 @@ describe('ComposeScreen', () => {
     fireEvent.press(firstScreen.getByTestId('compose-privacy-button'));
     fireEvent.press(firstScreen.getByTestId('compose-privacy-option-FRIENDS'));
 
-    expect(firstScreen.getByText('친구 공개')).toBeTruthy();
+    expect(firstScreen.getByTestId('compose-privacy-button')).toBeTruthy();
+    expect(firstScreen.getAllByText('친구 공개').length).toBeGreaterThan(0);
     firstScreen.unmount();
 
     const secondScreen = await renderComposeScreen();
-    expect(secondScreen.getByText('친구 공개')).toBeTruthy();
+    expect(secondScreen.getAllByText('친구 공개').length).toBeGreaterThan(0);
   });
 
   it('adds library photos and marks the first one as cover', async () => {
@@ -119,7 +120,8 @@ describe('ComposeScreen', () => {
 
     const screen = await renderComposeScreen();
 
-    fireEvent.press(screen.getByTestId('compose-library-button'));
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
 
     await waitFor(() =>
       expect(screen.getByTestId('compose-photo-card-picked-photo-1')).toBeTruthy(),
@@ -137,7 +139,8 @@ describe('ComposeScreen', () => {
 
     const screen = await renderComposeScreen();
 
-    fireEvent.press(screen.getByTestId('compose-camera-button'));
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-camera'));
 
     await waitFor(() =>
       expect(screen.getByTestId('compose-photo-card-camera-photo-1')).toBeTruthy(),
@@ -178,13 +181,14 @@ describe('ComposeScreen', () => {
 
     const screen = await renderComposeScreen();
 
-    fireEvent.press(screen.getByTestId('compose-library-button'));
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
 
     await waitFor(() =>
       expect(screen.getByTestId('compose-photo-card-picked-photo-2')).toBeTruthy(),
     );
 
-    fireEvent.press(screen.getByTestId('compose-photo-move-left-picked-photo-2'));
+    fireEvent.press(screen.getByTestId('compose-photo-preview-picked-photo-2'));
     await waitFor(() =>
       expect(screen.getByTestId('compose-photo-cover-badge-picked-photo-2')).toBeTruthy(),
     );
@@ -216,7 +220,8 @@ describe('ComposeScreen', () => {
 
     const screen = await renderComposeScreen();
 
-    fireEvent.press(screen.getByTestId('compose-library-button'));
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
     await waitFor(() =>
       expect(screen.getByTestId('compose-photo-card-picked-photo-1')).toBeTruthy(),
     );

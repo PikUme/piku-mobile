@@ -1,5 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -30,11 +31,53 @@ export function BottomSheet({
   footer,
   heightRatio = 0.72,
 }: BottomSheetProps) {
+  const [isMounted, setIsMounted] = useState(visible);
+  const translateY = useRef(new Animated.Value(28)).current;
+  const shouldAnimate = process.env.NODE_ENV !== 'test';
+
+  useEffect(() => {
+    if (!shouldAnimate) {
+      setIsMounted(visible);
+      return;
+    }
+
+    if (visible) {
+      translateY.setValue(28);
+      setIsMounted(true);
+      Animated.spring(translateY, {
+        toValue: 0,
+        damping: 22,
+        mass: 0.9,
+        stiffness: 260,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+
+    if (!isMounted) {
+      return;
+    }
+
+    Animated.timing(translateY, {
+      toValue: 28,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setIsMounted(false);
+      }
+    });
+  }, [isMounted, shouldAnimate, translateY, visible]);
+
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <Modal
-      visible={visible}
+      visible={isMounted}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -45,13 +88,17 @@ export function BottomSheet({
           style={styles.scrim}
           testID="bottom-sheet-scrim"
         />
-        <View style={[styles.sheet, { maxHeight: `${heightRatio * 100}%` }]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            { maxHeight: `${heightRatio * 100}%`, transform: [{ translateY }] },
+          ]}>
           <View style={styles.handle} />
           {title ? <Text style={styles.title}>{title}</Text> : null}
           {description ? <Text style={styles.description}>{description}</Text> : null}
           <View style={styles.content}>{children}</View>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   );
