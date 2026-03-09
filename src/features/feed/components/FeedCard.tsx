@@ -17,7 +17,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import type { FeedDiary } from '@/types/diary';
 import { FriendshipStatus } from '@/types/friend';
 import { colors, radius, shadows, spacing, typography } from '@/theme';
-import { formatFeedDate, formatTimeAgo } from '@/features/feed/lib/format';
+import { formatFeedDate } from '@/features/feed/lib/format';
 
 interface FeedCardProps {
   post: FeedDiary;
@@ -253,8 +253,7 @@ export function FeedCard({
           </Pressable>
         )}
       </View>
-
-      <Text style={styles.timeAgo}>{formatTimeAgo(post.createdAt)}</Text>
+      {/* <Text style={styles.timeAgo}>{formatTimeAgo(post.createdAt)}</Text> */}
     </View>
   );
 }
