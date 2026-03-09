@@ -7,7 +7,7 @@ import { colors, spacing, typography } from '@/theme';
 
 interface AuthScreenLayoutProps extends PropsWithChildren {
   title: string;
-  description: string;
+  description?: string;
   footer?: ReactNode;
   onBack?: () => void;
 }
@@ -39,7 +39,7 @@ export function AuthScreenLayout({
             ) : null}
             <Text style={styles.title}>{title}</Text>
           </View>
-          <Text style={styles.description}>{description}</Text>
+          {description ? <Text style={styles.description}>{description}</Text> : null}
           <View style={styles.content}>{children}</View>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </View>
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   panel: {
     width: '100%',
     maxWidth: 420,
-    gap: spacing.xl,
+    gap: spacing.lg,
   },
   header: {
     minHeight: 32,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   content: {
-    gap: spacing.lg,
+    gap: spacing.md,
   },
   footer: {
     gap: spacing.md,

@@ -68,6 +68,41 @@ describe('LoginScreen', () => {
     expect(routerMock.replace).toHaveBeenCalledWith('/');
   });
 
+  it('normalizes avatarUrl from the login response', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/auth/login`, async () =>
+        HttpResponse.json(
+          {
+            user: {
+              id: 'user-1',
+              email: 'test@gmail.com',
+              nickname: 'test',
+              avatar: '',
+              avatarUrl: 'characters/fixed/cat.png',
+            },
+          },
+          {
+            headers: {
+              authorization: 'Bearer server-token',
+            },
+          },
+        ),
+      ),
+    );
+
+    const screen = renderWithProviders(<LoginScreen />);
+
+    fireEvent.changeText(screen.getByTestId('login-email-input'), 'test@gmail.com');
+    fireEvent.changeText(screen.getByTestId('login-password-input'), '1');
+    fireEvent.press(screen.getByTestId('login-submit-button'));
+
+    await waitFor(() =>
+      expect(useAuthStore.getState().user?.avatar).toBe(
+        'http://localhost:8080/characters/fixed/cat.png',
+      ),
+    );
+  });
+
   it('shows api error message when credentials are invalid', async () => {
     server.use(
       http.post(`${API_BASE_URL}/auth/login`, async () =>

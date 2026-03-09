@@ -50,7 +50,6 @@ export function LoginScreen() {
 
   return (
     <AuthScreenLayout
-      description="이메일과 비밀번호를 입력해 로그인해 주세요."
       footer={
         <View style={styles.footerActions}>
           <View style={styles.signupRow}>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { normalizeAuthUser } from '@/lib/auth/normalizeAuthUser';
 import {
   clearAuthSession,
   getAuthSession,
@@ -26,10 +27,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     const session = await getAuthSession();
 
     if (session) {
+      const normalizedUser = normalizeAuthUser(session.user);
       set({
         isHydrated: true,
         isLoggedIn: true,
-        user: session.user,
+        user: normalizedUser,
       });
       return;
     }
@@ -41,11 +43,15 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
   login: async (session) => {
-    await persistAuthSession(session);
+    const normalizedUser = normalizeAuthUser(session.user);
+    await persistAuthSession({
+      ...session,
+      user: normalizedUser,
+    });
     set({
       isHydrated: true,
       isLoggedIn: true,
-      user: session.user,
+      user: normalizedUser,
     });
   },
   logout: async () => {
@@ -57,7 +63,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
   setUser: async (user) => {
-    await updateStoredUser(user);
-    set({ user });
+    const normalizedUser = normalizeAuthUser(user);
+    await updateStoredUser(normalizedUser);
+    set({ user: normalizedUser });
   },
 }));

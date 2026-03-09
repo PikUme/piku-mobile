@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/client';
 import { getOrCreateDeviceId } from '@/lib/auth/sessionStorage';
+import { normalizeAuthUser } from '@/lib/auth/normalizeAuthUser';
 import { env } from '@/lib/env';
 import type { ApiError } from '@/lib/api/errors';
 import type {
@@ -112,7 +113,7 @@ export async function login(payload: LoginPayload): Promise<AuthSession> {
 
     return {
       accessToken,
-      user,
+      user: normalizeAuthUser(user),
     };
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {

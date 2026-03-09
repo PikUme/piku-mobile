@@ -3,6 +3,7 @@ export interface AuthUser {
   email: string;
   nickname: string;
   avatar?: string;
+  avatarUrl?: string;
 }
 
 export interface AuthSession {
