@@ -3,6 +3,7 @@ import { act, fireEvent, waitFor } from '@testing-library/react-native';
 import { http, HttpResponse } from 'msw';
 
 import { FeedScreen } from '@/features/feed/screens/FeedScreen';
+import { buildLocalRootCommentPageMock } from '@/lib/api/comments';
 import { useAuthStore } from '@/store/authStore';
 import { FriendshipStatus } from '@/types/friend';
 import { server } from '../../mocks/server';
@@ -95,6 +96,39 @@ describe('FeedScreen', () => {
       pathname: '/diary/story',
       params: { id: '301' },
     });
+  });
+
+  it('does not refetch comments in a loop when the feed comment sheet is opened', async () => {
+    let commentRequestCount = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/comments`, ({ request }) => {
+        commentRequestCount += 1;
+
+        const url = new URL(request.url);
+        const diaryId = Number(url.searchParams.get('diaryId'));
+        const page = Number(url.searchParams.get('page') ?? '0');
+        const size = Number(url.searchParams.get('size') ?? '10');
+
+        return HttpResponse.json(buildLocalRootCommentPageMock(diaryId, page, size));
+      }),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-comment-button-301')).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId('feed-comment-button-301'));
+
+    await waitFor(() => expect(screen.getByText('댓글 4개')).toBeTruthy());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(commentRequestCount).toBe(1);
   });
 
   it('loads the next feed page and shows the end label', async () => {

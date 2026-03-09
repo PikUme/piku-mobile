@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -90,6 +90,11 @@ export function DiaryCommentSheet({
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
   const currentDiaryId = diary?.diaryId ?? null;
+  const onCommentCountChangeRef = useRef(onCommentCountChange);
+
+  useEffect(() => {
+    onCommentCountChangeRef.current = onCommentCountChange;
+  }, [onCommentCountChange]);
 
   useEffect(() => {
     setTotalComments(diary?.commentCount ?? 0);
@@ -98,9 +103,9 @@ export function DiaryCommentSheet({
   const applyCommentCount = useCallback(
     (count: number) => {
       setTotalComments(count);
-      onCommentCountChange?.(count);
+      onCommentCountChangeRef.current?.(count);
     },
-    [onCommentCountChange],
+    [],
   );
 
   const loadRootComments = async (isNewFetch = false) => {

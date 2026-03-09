@@ -164,6 +164,19 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     setSelectedPost(post);
   };
 
+  const handleCommentCountChange = useCallback((diaryId: number, count: number) => {
+    setCommentCountOverrides((current) => {
+      if (current[diaryId] === count) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [diaryId]: count,
+      };
+    });
+  }, []);
+
   const handleSendFriendRequest = async (post: FeedDiary) => {
     try {
       await sendFriendRequest(post.userId);
@@ -327,12 +340,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
 
       <FeedCommentSheet
         onClose={() => setSelectedPost(null)}
-        onCommentCountChange={(diaryId, count) => {
-          setCommentCountOverrides((current) => ({
-            ...current,
-            [diaryId]: count,
-          }));
-        }}
+        onCommentCountChange={handleCommentCountChange}
         onOpenDetail={handleOpenDetail}
         post={selectedPost}
         visible={Boolean(selectedPost)}
