@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Image,
+  LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -42,8 +43,9 @@ export function FeedCard({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [canExpand, setCanExpand] = useState(false);
+  const [mediaWidth, setMediaWidth] = useState(0);
   const { width } = useWindowDimensions();
-  const imageSize = Math.max(width - spacing['2xl'] * 2, 280);
+  const imageSize = mediaWidth || Math.max(width - spacing['2xl'] * 2, 280);
   const collapsedPreviewText = post.content.replace(/\s+/g, ' ').trim();
 
   const canShowFriendAction = isLoggedIn && viewerUserId !== post.userId;
@@ -63,6 +65,14 @@ export function FeedCard({
     }
 
     setCurrentImageIndex(Math.round(event.nativeEvent.contentOffset.x / width));
+  };
+
+  const handleMediaLayout = (event: LayoutChangeEvent) => {
+    const nextWidth = Math.ceil(event.nativeEvent.layout.width);
+
+    if (nextWidth > 0 && nextWidth !== mediaWidth) {
+      setMediaWidth(nextWidth);
+    }
   };
 
   const renderFriendAction = () => {
@@ -129,11 +139,7 @@ export function FeedCard({
         {renderFriendAction()}
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => onOpenDetail(post)}
-        style={({ pressed }) => [styles.mediaPressable, pressed && styles.pressed]}
-        testID={`feed-card-open-${post.diaryId}`}>
+      <View onLayout={handleMediaLayout} style={styles.mediaSection}>
         {post.imgUrls.length > 0 ? (
           <ScrollView
             horizontal
@@ -143,32 +149,46 @@ export function FeedCard({
             style={[styles.imageScroller, { height: imageSize }]}
             testID={`feed-image-carousel-${post.diaryId}`}>
             {post.imgUrls.map((imageUrl, index) => (
-              <Image
+              <Pressable
                 key={`${post.diaryId}-${index}`}
-                source={{ uri: imageUrl }}
-                style={[styles.image, { width: imageSize, height: imageSize }]}
-              />
+                accessibilityRole="button"
+                onPress={() => onOpenDetail(post)}
+                style={({ pressed }) => [
+                  styles.mediaPressable,
+                  { width: imageSize, height: imageSize },
+                  pressed && styles.pressed,
+                ]}
+                testID={
+                  index === 0
+                    ? `feed-card-open-${post.diaryId}`
+                    : `feed-card-open-${post.diaryId}-${index}`
+                }>
+                <Image
+                  source={{ uri: imageUrl }}
+                  style={[styles.image, { width: imageSize, height: imageSize }]}
+                />
+              </Pressable>
             ))}
           </ScrollView>
         ) : (
-          <View style={styles.imageFallback}>
-            <Ionicons color={colors.mutedText} name="image-outline" size={26} />
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => onOpenDetail(post)}
+            style={({ pressed }) => [styles.mediaPressable, pressed && styles.pressed]}
+            testID={`feed-card-open-${post.diaryId}`}>
+            <View style={styles.imageFallback}>
+              <Ionicons color={colors.mutedText} name="image-outline" size={26} />
+            </View>
+          </Pressable>
         )}
         {post.imgUrls.length > 1 ? (
-          <View style={styles.pagination}>
-            {post.imgUrls.map((_, index) => (
-              <View
-                key={`${post.diaryId}-dot-${index}`}
-                style={[
-                  styles.paginationDot,
-                  index === currentImageIndex && styles.paginationDotActive,
-                ]}
-              />
-            ))}
+          <View style={styles.paginationRow} testID={`feed-image-pagination-${post.diaryId}`}>
+            <Text style={styles.paginationLabel} testID={`feed-image-pagination-label-${post.diaryId}`}>
+              {currentImageIndex + 1} / {post.imgUrls.length}
+            </Text>
           </View>
         ) : null}
-      </Pressable>
+      </View>
 
       <View style={styles.footer}>
         <Pressable
@@ -298,6 +318,9 @@ const styles = StyleSheet.create({
   mediaPressable: {
     position: 'relative',
   },
+  mediaSection: {
+    backgroundColor: colors.surface,
+  },
   imageScroller: {
     width: '100%',
     aspectRatio: 1,
@@ -316,24 +339,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.surfaceMuted,
   },
-  pagination: {
-    position: 'absolute',
-    bottom: spacing.md,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
+  paginationRow: {
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
+    paddingTop: spacing.sm,
   },
-  paginationDot: {
-    width: 6,
-    height: 6,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  paginationDotActive: {
-    backgroundColor: colors.white,
-    width: 18,
+  paginationLabel: {
+    ...typography.caption,
+    color: colors.mutedText,
+    fontWeight: '700',
   },
   footer: {
     paddingHorizontal: spacing.lg,

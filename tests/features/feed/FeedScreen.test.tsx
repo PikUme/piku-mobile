@@ -20,12 +20,15 @@ const buildFeedItem = (
     userId: string;
     commentCount: number;
     friendStatus: FriendshipStatus;
+    imgUrls: string[];
   }> = {},
 ) => ({
   diaryId,
   status: 'PUBLIC' as const,
   content: overrides.content ?? `피드 카드 ${diaryId} 본문입니다.`,
-  imgUrls: [`https://picsum.photos/seed/feed-test-${diaryId}/640/640`],
+  imgUrls:
+    overrides.imgUrls ??
+    [`https://picsum.photos/seed/feed-test-${diaryId}/640/640`],
   date: '2026-03-08',
   nickname: overrides.nickname ?? `user-${diaryId}`,
   avatar: '',
@@ -105,6 +108,48 @@ describe('FeedScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('feed-card-303')).toBeTruthy());
     expect(screen.getByTestId('feed-end-label')).toBeTruthy();
+  });
+
+  it('updates image position label when the carousel is swiped', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [
+            buildFeedItem(777, {
+              imgUrls: [
+                'https://picsum.photos/seed/feed-test-777-1/640/640',
+                'https://picsum.photos/seed/feed-test-777-2/640/640',
+                'https://picsum.photos/seed/feed-test-777-3/640/640',
+              ],
+            }),
+          ],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
+    expect(screen.getByTestId('feed-image-pagination-label-777').props.children).toEqual([
+      1,
+      ' / ',
+      3,
+    ]);
+
+    fireEvent(screen.getByTestId('feed-image-carousel-777'), 'momentumScrollEnd', {
+      nativeEvent: {
+        layoutMeasurement: { width: 320, height: 320 },
+        contentOffset: { x: 320, y: 0 },
+      },
+    });
+
+    expect(screen.getByTestId('feed-image-pagination-label-777').props.children).toEqual([
+      2,
+      ' / ',
+      3,
+    ]);
   });
 
   it('hides the floating header on downward scroll and shows it again on upward scroll', async () => {
