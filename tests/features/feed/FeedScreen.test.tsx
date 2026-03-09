@@ -59,6 +59,9 @@ describe('FeedScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
 
+    expect(screen.getByTestId('feed-floating-header').props.accessibilityState.expanded).toBe(
+      true,
+    );
     expect(screen.getByTestId('shell-brand-title')).toBeTruthy();
     expect(screen.queryByTestId('shell-user-name')).toBeNull();
     expect(screen.getAllByText('피쿠').length).toBeGreaterThan(0);
@@ -104,6 +107,40 @@ describe('FeedScreen', () => {
     expect(screen.getByTestId('feed-end-label')).toBeTruthy();
   });
 
+  it('hides the floating header on downward scroll and shows it again on upward scroll', async () => {
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+
+    fireEvent.scroll(screen.getByTestId('feed-list'), {
+      nativeEvent: {
+        contentOffset: { x: 0, y: 120 },
+        contentSize: { width: 390, height: 1200 },
+        layoutMeasurement: { width: 390, height: 844 },
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-floating-header').props.accessibilityState.expanded).toBe(
+        false,
+      ),
+    );
+
+    fireEvent.scroll(screen.getByTestId('feed-list'), {
+      nativeEvent: {
+        contentOffset: { x: 0, y: 70 },
+        contentSize: { width: 390, height: 1200 },
+        layoutMeasurement: { width: 390, height: 844 },
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-floating-header').props.accessibilityState.expanded).toBe(
+        true,
+      ),
+    );
+  });
+
   it('handles friend CTA transitions', async () => {
     const screen = renderWithProviders(<FeedScreen />);
 
@@ -140,6 +177,7 @@ describe('FeedScreen', () => {
 
     const screen = renderWithProviders(<FeedScreen />);
 
+    expect(screen.queryByTestId('public-feed-title')).toBeNull();
     await waitFor(() =>
       expect(screen.getByTestId('feed-comment-button-301')).toBeTruthy(),
     );

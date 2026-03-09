@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 
 import { FeedScreen } from '@/features/feed/screens/FeedScreen';
 import { HomeScreen } from '@/features/home/screens/HomeScreen';
@@ -19,25 +19,24 @@ describe('Guest public feed entry', () => {
     });
   });
 
-  it('shows the public feed entry on home for guests', () => {
+  it('shows the feed directly on home for guests without a public banner', async () => {
     const screen = renderWithProviders(<HomeScreen />);
 
-    expect(screen.getByTestId('public-feed-title')).toBeTruthy();
-    expect(screen.getByText('공개 일기만 노출')).toBeTruthy();
-
-    fireEvent.press(screen.getByTestId('public-feed-login-button'));
-
-    expect(routerMock.push).toHaveBeenCalledWith('/login');
+    await waitFor(() => expect(screen.getByTestId('feed-list')).toBeTruthy());
+    expect(screen.queryByTestId('public-feed-title')).toBeNull();
   });
 
-  it('shows guest action restrictions on the feed screen', () => {
+  it('shows guest action restrictions only in comment actions', async () => {
     const screen = renderWithProviders(<FeedScreen />);
 
-    expect(screen.getByText('댓글 액션 제한')).toBeTruthy();
-    expect(screen.getByText('친구 액션 제한')).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-comment-button-301')).toBeTruthy(),
+    );
+    expect(screen.queryByTestId('public-feed-title')).toBeNull();
 
-    fireEvent.press(screen.getByTestId('public-feed-signup-button'));
+    fireEvent.press(screen.getByTestId('feed-comment-button-301'));
+    fireEvent.press(screen.getByTestId('feed-comment-sheet-login-button'));
 
-    expect(routerMock.push).toHaveBeenCalledWith('/signup');
+    expect(routerMock.push).toHaveBeenCalledWith('/login');
   });
 });

@@ -187,7 +187,7 @@ export function HomeScreen() {
   const emptyStateText = !monthlyDiariesQuery.isPending && (monthlyDiariesQuery.data?.length ?? 0) === 0
     ? isOwnCalendar
       ? '지난 날짜를 눌러 첫 기록을 남길 수 있습니다.'
-      : '친구의 이 달 기록이 없습니다.'
+      : null
     : null;
 
   return (

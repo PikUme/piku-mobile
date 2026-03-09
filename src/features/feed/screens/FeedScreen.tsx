@@ -1,10 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
 import { AppTopBar } from '@/components/shell/AppTopBar';
-import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -12,10 +20,7 @@ import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { FeedCard } from '@/features/feed/components/FeedCard';
 import { FeedCommentSheet } from '@/features/feed/components/FeedCommentSheet';
 import { getFeedCursor } from '@/lib/api/feed';
-import {
-  cancelFriendRequest,
-  sendFriendRequest,
-} from '@/lib/api/friends';
+import { cancelFriendRequest, sendFriendRequest } from '@/lib/api/friends';
 import { showAlert } from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
 import type { FeedDiary } from '@/types/diary';
@@ -25,6 +30,12 @@ import { colors, radius, spacing, typography } from '@/theme';
 interface FeedScreenProps {
   entryPoint?: 'home' | 'feed';
 }
+
+const FEED_HEADER_HIDE_OFFSET = 88;
+const FEED_HEADER_SCROLL_DOWN_THRESHOLD = 12;
+const FEED_HEADER_SCROLL_UP_THRESHOLD = 6;
+const FEED_HEADER_TRANSLATE_Y = -92;
+const FEED_HEADER_SPACER = 88;
 
 function flattenUniqueItems(pages: { items: FeedDiary[] }[]) {
   const map = new Map<number, FeedDiary>();
@@ -38,17 +49,22 @@ function flattenUniqueItems(pages: { items: FeedDiary[] }[]) {
   return Array.from(map.values());
 }
 
-export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
+export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps) {
+  void _entryPoint;
   const router = useRouter();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const user = useAuthStore((state) => state.user);
   const [selectedPost, setSelectedPost] = useState<FeedDiary | null>(null);
-  const [statusOverrides, setStatusOverrides] = useState<
-    Record<number, FriendshipStatus>
-  >({});
-  const [commentCountOverrides, setCommentCountOverrides] = useState<
-    Record<number, number>
-  >({});
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [statusOverrides, setStatusOverrides] = useState<Record<number, FriendshipStatus>>(
+    {},
+  );
+  const [commentCountOverrides, setCommentCountOverrides] = useState<Record<number, number>>(
+    {},
+  );
+  const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const lastScrollOffsetRef = useRef(0);
+  const headerVisibleRef = useRef(true);
 
   const {
     data,
@@ -69,10 +85,7 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
       lastPage.hasNext ? lastPage.nextCursor ?? undefined : undefined,
   });
 
-  const rawItems = useMemo(
-    () => flattenUniqueItems(data?.pages ?? []),
-    [data?.pages],
-  );
+  const rawItems = useMemo(() => flattenUniqueItems(data?.pages ?? []), [data?.pages]);
 
   const items = useMemo(
     () =>
@@ -87,6 +100,48 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
   const requestNextPage = () => {
     void (fetchNextPage as () => Promise<unknown>)();
   };
+
+  const animateHeader = useCallback(
+    (nextVisible: boolean) => {
+      if (headerVisibleRef.current === nextVisible) {
+        return;
+      }
+
+      headerVisibleRef.current = nextVisible;
+      setIsHeaderVisible(nextVisible);
+      Animated.timing(headerTranslateY, {
+        toValue: nextVisible ? 0 : FEED_HEADER_TRANSLATE_Y,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    },
+    [headerTranslateY],
+  );
+
+  const handleFeedScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const nextOffset = event.nativeEvent.contentOffset.y;
+      const delta = nextOffset - lastScrollOffsetRef.current;
+
+      if (nextOffset <= 0) {
+        animateHeader(true);
+        lastScrollOffsetRef.current = nextOffset;
+        return;
+      }
+
+      if (
+        delta > FEED_HEADER_SCROLL_DOWN_THRESHOLD &&
+        nextOffset > FEED_HEADER_HIDE_OFFSET
+      ) {
+        animateHeader(false);
+      } else if (delta < -FEED_HEADER_SCROLL_UP_THRESHOLD) {
+        animateHeader(true);
+      }
+
+      lastScrollOffsetRef.current = nextOffset;
+    },
+    [animateHeader],
+  );
 
   const handleOpenDetail = (post: FeedDiary) => {
     setSelectedPost(null);
@@ -132,82 +187,54 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
     }
   };
 
-  const handleGuestLogin = () => {
-    setSelectedPost(null);
-    router.push('/login');
-  };
-
-  const handleGuestSignup = () => {
-    setSelectedPost(null);
-    router.push('/signup');
-  };
-
-  const headerComponent = (
-    <View style={styles.headerContent}>
-      <AppTopBar title="PikUme" variant="brand" />
-      {!isLoggedIn ? (
-        <View style={styles.guestBanner}>
-          <Text style={styles.guestEyebrow}>PUBLIC FEED</Text>
-          <Text style={styles.guestTitle} testID="public-feed-title">
-            공개 피드
-          </Text>
-          <Text style={styles.guestDescription}>
-            공개된 일기는 바로 볼 수 있고, 댓글 작성과 친구 관련 액션은 로그인 이후에만
-            가능합니다.
-          </Text>
-          <View style={styles.guestPolicies}>
-            <Text style={styles.guestPolicyText}>공개 일기만 노출</Text>
-            <Text style={styles.guestPolicyText}>댓글 액션 제한</Text>
-            <Text style={styles.guestPolicyText}>친구 액션 제한</Text>
-          </View>
-          <View style={styles.guestCtas}>
-            <AppButton
-              fullWidth={false}
-              label="로그인"
-              onPress={handleGuestLogin}
-              testID="public-feed-login-button"
-              variant="neutral"
-            />
-            <AppButton
-              fullWidth={false}
-              label="가입하기"
-              onPress={handleGuestSignup}
-              testID="public-feed-signup-button"
-              variant="ghost"
-            />
-          </View>
-        </View>
-      ) : null}
-    </View>
+  const floatingHeader = (
+    <Animated.View
+      accessibilityState={{ expanded: isHeaderVisible }}
+      style={[
+        styles.floatingHeader,
+        {
+          transform: [{ translateY: headerTranslateY }],
+        },
+      ]}
+      testID="feed-floating-header">
+      <View style={styles.floatingHeaderInner}>
+        <AppTopBar title="PikUme" variant="brand" />
+      </View>
+    </Animated.View>
   );
 
   if (isPending) {
     return (
-      <ScreenContainer>
-        {headerComponent}
-        <LoadingState label="피드를 불러오는 중입니다." />
+      <ScreenContainer contentStyle={styles.screen}>
+        {floatingHeader}
+        <View style={styles.stateContent}>
+          <LoadingState label="피드를 불러오는 중입니다." />
+        </View>
       </ScreenContainer>
     );
   }
 
   if (isError) {
     return (
-      <ScreenContainer>
-        {headerComponent}
-        <ErrorState
-          actionLabel="다시 시도"
-          description={error instanceof Error ? error.message : undefined}
-          onPressAction={() => {
-            void refetch();
-          }}
-          title="피드를 불러오지 못했습니다."
-        />
+      <ScreenContainer contentStyle={styles.screen}>
+        {floatingHeader}
+        <View style={styles.stateContent}>
+          <ErrorState
+            actionLabel="다시 시도"
+            description={error instanceof Error ? error.message : undefined}
+            onPressAction={() => {
+              void refetch();
+            }}
+            title="피드를 불러오지 못했습니다."
+          />
+        </View>
       </ScreenContainer>
     );
   }
 
   return (
     <ScreenContainer contentStyle={styles.screen}>
+      {floatingHeader}
       <FlatList
         contentContainerStyle={styles.listContent}
         data={items}
@@ -243,7 +270,6 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
             </View>
           ) : null
         }
-        ListHeaderComponent={headerComponent}
         onEndReached={() => {
           if (!hasNextPage || isFetchingNextPage) {
             return;
@@ -252,6 +278,7 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
           requestNextPage();
         }}
         onEndReachedThreshold={0.45}
+        onScroll={handleFeedScroll}
         renderItem={({ item }) => (
           <FeedCard
             isLoggedIn={isLoggedIn}
@@ -268,6 +295,7 @@ export function FeedScreen({ entryPoint = 'feed' }: FeedScreenProps) {
             viewerUserId={user?.id}
           />
         )}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         style={styles.list}
         testID="feed-list"
@@ -294,57 +322,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
+  stateContent: {
+    flex: 1,
+    paddingTop: FEED_HEADER_SPACER,
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  floatingHeaderInner: {
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.background,
+  },
   list: {
     flex: 1,
   },
   listContent: {
     gap: spacing.lg,
-    paddingHorizontal: spacing['2xl'],
+    paddingTop: FEED_HEADER_SPACER,
     paddingBottom: spacing['4xl'],
-  },
-  headerContent: {
-    paddingTop: spacing['2xl'],
-    paddingBottom: spacing.sm,
-  },
-  guestBanner: {
-    gap: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-  },
-  guestEyebrow: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-  },
-  guestTitle: {
-    ...typography.heading,
-    color: colors.text,
-  },
-  guestDescription: {
-    ...typography.body,
-    color: colors.mutedText,
-  },
-  guestPolicies: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  guestPolicyText: {
-    ...typography.caption,
-    color: colors.text,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  guestCtas: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
   footerState: {
     paddingVertical: spacing.xl,
