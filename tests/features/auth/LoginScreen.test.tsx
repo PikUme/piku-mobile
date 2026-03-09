@@ -98,7 +98,7 @@ describe('LoginScreen', () => {
 
     await waitFor(() =>
       expect(useAuthStore.getState().user?.avatar).toBe(
-        'http://localhost:8080/characters/fixed/cat.png',
+        'http://localhost:8080/api/characters/fixed/cat.png',
       ),
     );
   });

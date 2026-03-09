@@ -6,7 +6,7 @@ type AuthUserLike = Partial<AuthUser> & {
 };
 
 function getServerOrigin() {
-  return env.apiBaseUrl.replace(/\/api\/?$/, '');
+  return env.apiBaseUrl.replace(/\/$/, '');
 }
 
 function normalizeAssetUrl(value?: string | null) {
@@ -18,14 +18,14 @@ function normalizeAssetUrl(value?: string | null) {
     return value;
   }
 
-  const normalizedPath = value.startsWith('/') ? value : `/${value}`;
-  return `${getServerOrigin()}${normalizedPath}`;
+  const normalizedPath = value.startsWith('/') ? value.slice(1) : value;
+  return `${getServerOrigin()}/${normalizedPath}`;
 }
 
 export function normalizeAuthUser(user: AuthUserLike): AuthUser {
   const rawAvatar =
-    (typeof user.avatar === 'string' ? user.avatar : '') ||
-    (typeof user.avatarUrl === 'string' ? user.avatarUrl : '');
+    (typeof user.avatarUrl === 'string' ? user.avatarUrl : '') ||
+    (typeof user.avatar === 'string' ? user.avatar : '');
 
   return {
     id: typeof user.id === 'string' ? user.id : '',

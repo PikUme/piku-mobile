@@ -51,6 +51,28 @@ describe('authStore', () => {
     });
   });
 
+  it('prefers avatarUrl when restoring a stored session', async () => {
+    await SecureStore.setItemAsync(
+      'pikume.auth.session',
+      JSON.stringify({
+        accessToken: 'token-1',
+        user: {
+          id: 'user-1',
+          email: 'tester@example.com',
+          nickname: 'tester',
+          avatar: 'http://localhost:8080/characters/fixed/base_image_1.png',
+          avatarUrl: 'characters/fixed/base_image_1.png',
+        },
+      }),
+    );
+
+    await useAuthStore.getState().hydrateSession();
+
+    expect(useAuthStore.getState().user?.avatar).toBe(
+      'http://localhost:8080/api/characters/fixed/base_image_1.png',
+    );
+  });
+
   it('clears the session on logout', async () => {
     await useAuthStore.getState().login({
       accessToken: 'token-1',
