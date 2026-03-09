@@ -5,7 +5,9 @@ name: Bootstrap smoke
     clearState: true
     clearKeychain: true
 - assertVisible:
-    id: "public-feed-title"
+    id: "feed-list"
+- assertVisible:
+    id: "shell-brand-title"
 - assertVisible: "홈"
 - assertVisible:
     id: "bottom-tab-home"
