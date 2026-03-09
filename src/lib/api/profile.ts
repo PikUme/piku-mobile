@@ -10,6 +10,26 @@ import type {
   UserProfileResponseDTO,
 } from '@/types/profile';
 
+interface RawDiaryMonthCountDTO {
+  year?: number;
+  month?: number;
+  count?: number;
+  daysInMonth?: number;
+}
+
+interface RawUserProfileResponse {
+  id?: string;
+  userId?: string;
+  nickname?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  friendCount?: number;
+  diaryCount?: number;
+  friendStatus?: string;
+  isOwner?: boolean;
+  monthlyDiaryCount?: RawDiaryMonthCountDTO[];
+}
+
 const shouldUseLocalProfileMock =
   process.env.NODE_ENV !== 'test' &&
   env.appEnv === 'local' &&
@@ -53,6 +73,83 @@ function buildMonthlyDiaryCount(seed: number): DiaryMonthCountDTO[] {
   });
 }
 
+function getServerOrigin() {
+  return env.apiBaseUrl.replace(/\/$/, '');
+}
+
+function normalizeAssetUrl(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const normalizedPath = value.startsWith('/') ? value.slice(1) : value;
+  return `${getServerOrigin()}/${normalizedPath}`;
+}
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+
+function normalizeFriendStatus(value?: string): FriendshipStatus {
+  switch (value) {
+    case FriendshipStatus.FRIEND:
+      return FriendshipStatus.FRIEND;
+    case FriendshipStatus.SENT:
+      return FriendshipStatus.SENT;
+    case FriendshipStatus.RECEIVED:
+      return FriendshipStatus.RECEIVED;
+    default:
+      return FriendshipStatus.NONE;
+  }
+}
+
+export function normalizeProfileResponse(
+  data: RawUserProfileResponse,
+  requestedUserId: string,
+): UserProfileResponseDTO {
+  const resolvedUserId =
+    (typeof data.userId === 'string' && data.userId) ||
+    (typeof data.id === 'string' && data.id) ||
+    requestedUserId;
+
+  return {
+    id: (typeof data.id === 'string' && data.id) || resolvedUserId,
+    userId: resolvedUserId,
+    nickname: typeof data.nickname === 'string' ? data.nickname : '',
+    avatar: normalizeAssetUrl(
+      (typeof data.avatar === 'string' && data.avatar) ||
+        (typeof data.avatarUrl === 'string' ? data.avatarUrl : ''),
+    ),
+    friendCount: typeof data.friendCount === 'number' ? data.friendCount : 0,
+    diaryCount: typeof data.diaryCount === 'number' ? data.diaryCount : 0,
+    friendStatus: normalizeFriendStatus(data.friendStatus),
+    isOwner: data.isOwner === true,
+    monthlyDiaryCount: Array.isArray(data.monthlyDiaryCount)
+      ? data.monthlyDiaryCount
+          .filter(
+            (item): item is Required<Pick<RawDiaryMonthCountDTO, 'year' | 'month' | 'count'>> &
+              RawDiaryMonthCountDTO =>
+              typeof item.year === 'number' &&
+              typeof item.month === 'number' &&
+              typeof item.count === 'number',
+          )
+          .map((item) => ({
+            year: item.year,
+            month: item.month,
+            count: item.count,
+            daysInMonth:
+              typeof item.daysInMonth === 'number'
+                ? item.daysInMonth
+                : getDaysInMonth(item.year, item.month),
+          }))
+      : [],
+  };
+}
+
 export function buildLocalProfilePreviewMock(userId: string): UserProfileResponseDTO {
   const seed = getSeedFromUserId(userId);
   const isOwner = userId === 'user-1';
@@ -91,8 +188,8 @@ export async function getProfileInfo(userId: string): Promise<UserProfileRespons
   }
 
   try {
-    const response = await apiClient.get<UserProfileResponseDTO>(`/users/${userId}/profile-preview`);
-    return response.data;
+    const response = await apiClient.get<RawUserProfileResponse>(`/users/${userId}`);
+    return normalizeProfileResponse(response.data, userId);
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {
       return buildLocalProfilePreviewMock(userId);

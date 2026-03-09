@@ -299,7 +299,7 @@ export const handlers = [
     const diaryId = Number(params.diaryId);
     return HttpResponse.json(buildLocalDiaryDetailMock(diaryId));
   }),
-  http.get(`${API_BASE_URL}/users/:userId/profile-preview`, ({ params }) => {
+  http.get(`${API_BASE_URL}/users/:userId`, ({ params }) => {
     const userId = String(params.userId ?? 'user-1');
     return HttpResponse.json(buildLocalProfilePreviewMock(userId));
   }),
