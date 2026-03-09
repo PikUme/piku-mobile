@@ -13,6 +13,7 @@ interface AppTopBarProps {
   title?: string;
   subtitle?: string;
   variant?: 'auto' | 'brand';
+  compact?: boolean;
 }
 
 function IconChipButton({
@@ -43,6 +44,7 @@ export function AppTopBar({
   title = 'PikUme',
   subtitle,
   variant = 'auto',
+  compact = false,
 }: AppTopBarProps) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -51,7 +53,7 @@ export function AppTopBar({
   const shouldShowUserProfile = variant !== 'brand' && isLoggedIn && user;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
       {shouldShowUserProfile ? (
         <View style={styles.userBlock}>
           <Avatar name={user.nickname} size={40} source={user.avatar ?? null} />
@@ -96,6 +98,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
     marginBottom: spacing.xl,
+  },
+  containerCompact: {
+    minHeight: 42,
+    marginBottom: 0,
   },
   userBlock: {
     flex: 1,

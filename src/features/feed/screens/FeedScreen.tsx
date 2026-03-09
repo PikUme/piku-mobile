@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import {
   Animated,
   FlatList,
+  LayoutChangeEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -31,11 +32,10 @@ interface FeedScreenProps {
   entryPoint?: 'home' | 'feed';
 }
 
-const FEED_HEADER_HIDE_OFFSET = 88;
+const FEED_HEADER_HIDE_OFFSET = 56;
 const FEED_HEADER_SCROLL_DOWN_THRESHOLD = 12;
 const FEED_HEADER_SCROLL_UP_THRESHOLD = 6;
-const FEED_HEADER_TRANSLATE_Y = -92;
-const FEED_HEADER_SPACER = 88;
+const FEED_HEADER_SPACER = 56;
 
 function flattenUniqueItems(pages: { items: FeedDiary[] }[]) {
   const map = new Map<number, FeedDiary>();
@@ -56,6 +56,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   const user = useAuthStore((state) => state.user);
   const [selectedPost, setSelectedPost] = useState<FeedDiary | null>(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [headerHeight, setHeaderHeight] = useState(FEED_HEADER_SPACER);
   const [statusOverrides, setStatusOverrides] = useState<Record<number, FriendshipStatus>>(
     {},
   );
@@ -63,6 +64,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     {},
   );
   const headerTranslateY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
   const lastScrollOffsetRef = useRef(0);
   const headerVisibleRef = useRef(true);
 
@@ -109,13 +111,20 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
 
       headerVisibleRef.current = nextVisible;
       setIsHeaderVisible(nextVisible);
-      Animated.timing(headerTranslateY, {
-        toValue: nextVisible ? 0 : FEED_HEADER_TRANSLATE_Y,
-        duration: 180,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.timing(headerTranslateY, {
+          toValue: nextVisible ? 0 : -(headerHeight + spacing.xs),
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerOpacity, {
+          toValue: nextVisible ? 1 : 0,
+          duration: nextVisible ? 180 : 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
     },
-    [headerTranslateY],
+    [headerHeight, headerOpacity, headerTranslateY],
   );
 
   const handleFeedScroll = useCallback(
@@ -187,18 +196,33 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     }
   };
 
+  const handleHeaderLayout = (event: LayoutChangeEvent) => {
+    const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+
+    if (nextHeight > 0 && nextHeight !== headerHeight) {
+      setHeaderHeight(nextHeight);
+
+      if (!headerVisibleRef.current) {
+        headerTranslateY.setValue(-(nextHeight + spacing.xs));
+        headerOpacity.setValue(0);
+      }
+    }
+  };
+
   const floatingHeader = (
     <Animated.View
       accessibilityState={{ expanded: isHeaderVisible }}
       style={[
         styles.floatingHeader,
         {
+          opacity: headerOpacity,
           transform: [{ translateY: headerTranslateY }],
         },
       ]}
+      pointerEvents={isHeaderVisible ? 'auto' : 'none'}
       testID="feed-floating-header">
-      <View style={styles.floatingHeaderInner}>
-        <AppTopBar title="PikUme" variant="brand" />
+      <View onLayout={handleHeaderLayout} style={styles.floatingHeaderInner}>
+        <AppTopBar compact title="PikUme" variant="brand" />
       </View>
     </Animated.View>
   );
@@ -207,7 +231,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     return (
       <ScreenContainer contentStyle={styles.screen}>
         {floatingHeader}
-        <View style={styles.stateContent}>
+        <View style={[styles.stateContent, { paddingTop: headerHeight }]}>
           <LoadingState label="피드를 불러오는 중입니다." />
         </View>
       </ScreenContainer>
@@ -218,7 +242,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     return (
       <ScreenContainer contentStyle={styles.screen}>
         {floatingHeader}
-        <View style={styles.stateContent}>
+        <View style={[styles.stateContent, { paddingTop: headerHeight }]}>
           <ErrorState
             actionLabel="다시 시도"
             description={error instanceof Error ? error.message : undefined}
@@ -236,7 +260,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     <ScreenContainer contentStyle={styles.screen}>
       {floatingHeader}
       <FlatList
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: headerHeight }]}
         data={items}
         keyExtractor={(item) => String(item.diaryId)}
         ListEmptyComponent={
@@ -324,7 +348,6 @@ const styles = StyleSheet.create({
   },
   stateContent: {
     flex: 1,
-    paddingTop: FEED_HEADER_SPACER,
   },
   floatingHeader: {
     position: 'absolute',
@@ -335,7 +358,7 @@ const styles = StyleSheet.create({
   },
   floatingHeaderInner: {
     paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -346,7 +369,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     gap: spacing.lg,
-    paddingTop: FEED_HEADER_SPACER,
     paddingBottom: spacing['4xl'],
   },
   footerState: {
