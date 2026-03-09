@@ -60,6 +60,8 @@ describe('DiaryCommentSheet', () => {
     await waitFor(() =>
       expect(screen.getByText('사진 분위기가 좋아요. 오늘 하루가 잘 전해집니다.')).toBeTruthy(),
     );
+    expect(screen.getByText('2026.03.05')).toBeTruthy();
+    expect(screen.queryByText(/일 전$/)).toBeNull();
 
     fireEvent.press(screen.getByTestId(`comment-toggle-replies-${ROOT_COMMENT_ID}`));
     await waitFor(() =>
@@ -77,6 +79,18 @@ describe('DiaryCommentSheet', () => {
 
     await waitFor(() => expect(screen.getByText('새 답글입니다.')).toBeTruthy());
     expect(onCommentCountChange).toHaveBeenCalled();
+  });
+
+  it('does not render the detail action when no detail handler is provided', async () => {
+    const screen = renderWithProviders(
+      <DiaryCommentSheet diary={buildLocalDiaryDetailMock(305)} onClose={jest.fn()} visible />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText('오늘의 장면을 기록한 상세 일기입니다. 스토리형과 딥링크형 화면에서 같은 데이터를 사용합니다. 필요할 때는 더 보기를 눌러 전체 내용을 확인할 수 있습니다.')).toBeTruthy(),
+    );
+
+    expect(screen.queryByTestId('diary-comment-sheet-detail-button')).toBeNull();
   });
 
   it('keeps reply pagination available after posting a reply to a partially loaded thread', async () => {

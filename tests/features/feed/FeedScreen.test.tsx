@@ -77,7 +77,7 @@ describe('FeedScreen', () => {
     });
   });
 
-  it('opens the comment sheet on mobile and routes to detail from the sheet', async () => {
+  it('opens the comment sheet on mobile without showing the story detail action', async () => {
     const screen = renderWithProviders(<FeedScreen />);
 
     await waitFor(() =>
@@ -89,13 +89,7 @@ describe('FeedScreen', () => {
     expect(screen.getByText('댓글 4개')).toBeTruthy();
     expect(screen.getByTestId('feed-comment-sheet-body')).toBeTruthy();
     expect(screen.queryByTestId('feed-comment-sheet-preview-image')).toBeNull();
-
-    fireEvent.press(screen.getByTestId('feed-comment-sheet-detail-button'));
-
-    expect(routerMock.push).toHaveBeenCalledWith({
-      pathname: '/diary/story',
-      params: { id: '301' },
-    });
+    expect(screen.queryByTestId('feed-comment-sheet-detail-button')).toBeNull();
   });
 
   it('does not refetch comments in a loop when the feed comment sheet is opened', async () => {

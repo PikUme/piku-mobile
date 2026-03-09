@@ -341,7 +341,6 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
       <FeedCommentSheet
         onClose={() => setSelectedPost(null)}
         onCommentCountChange={handleCommentCountChange}
-        onOpenDetail={handleOpenDetail}
         post={selectedPost}
         visible={Boolean(selectedPost)}
       />

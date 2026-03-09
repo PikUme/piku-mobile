@@ -10,7 +10,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { CommentComposer } from '@/features/diary/components/CommentComposer';
 import { CommentItem } from '@/features/diary/components/CommentItem';
-import { formatDiaryDate, formatDiaryTimeAgo } from '@/features/diary/lib/detail';
+import { formatDiaryDate } from '@/features/diary/lib/detail';
 import {
   createComment,
   deleteComment,
@@ -568,12 +568,7 @@ export function DiaryCommentSheet({
       commentsBody = <LoadingState label="댓글을 불러오는 중입니다." />;
     } else {
       commentsBody = (
-        <ScrollView
-          bounces={false}
-          contentContainerStyle={styles.commentsContent}
-          showsVerticalScrollIndicator={false}
-          style={styles.commentsScroll}
-          testID={`${testIDPrefix}-body`}>
+        <View style={styles.commentsContent}>
           {comments.map((comment) => (
             <CommentItem
               key={comment.id}
@@ -609,7 +604,7 @@ export function DiaryCommentSheet({
               <Text style={styles.loadMoreLabel}>다음 댓글 더 보기</Text>
             </Pressable>
           ) : null}
-        </ScrollView>
+        </View>
       );
     }
   }
@@ -623,39 +618,50 @@ export function DiaryCommentSheet({
       visible={visible}>
       {diary ? (
         <View style={styles.content}>
-          <View style={styles.previewCard}>
-            <View style={styles.previewHeader}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => handleOpenProfile(diary.userId)}
-                style={({ pressed }) => pressed && styles.pressed}
-                testID={`${testIDPrefix}-profile-button`}>
-                <Avatar name={diary.nickname} size={36} source={diary.avatar ?? null} />
-              </Pressable>
-              <View style={styles.previewText}>
-                <Text style={styles.previewNickname}>{diary.nickname}</Text>
-                <Text style={styles.previewMeta}>
-                  {formatDiaryDate(diary.createdAt)} · {formatDiaryTimeAgo(diary.createdAt)}
-                </Text>
-                <Text numberOfLines={2} style={styles.previewBody}>
-                  {diary.content}
-                </Text>
+          <ScrollView
+            bounces={false}
+            contentContainerStyle={styles.sheetScrollContent}
+            showsVerticalScrollIndicator={false}
+            style={styles.commentsScroll}
+            testID={`${testIDPrefix}-body`}>
+            <View style={styles.previewCard}>
+              <View style={styles.previewHeader}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => handleOpenProfile(diary.userId)}
+                  style={({ pressed }) => pressed && styles.pressed}
+                  testID={`${testIDPrefix}-profile-button`}>
+                  <Avatar name={diary.nickname} size={36} source={diary.avatar ?? null} />
+                </Pressable>
+                <View style={styles.previewText}>
+                  <View style={styles.previewTitleRow}>
+                    <Text numberOfLines={1} style={styles.previewNickname}>
+                      {diary.nickname}
+                    </Text>
+                    <Text numberOfLines={1} style={styles.previewMeta}>
+                      {formatDiaryDate(diary.createdAt)}
+                    </Text>
+                  </View>
+                  <Text numberOfLines={2} style={styles.previewBody}>
+                    {diary.content}
+                  </Text>
+                </View>
               </View>
+              {onOpenDetail ? (
+                <AppButton
+                  fullWidth={false}
+                  label="스토리 상세 보기"
+                  onPress={() => {
+                    onClose();
+                    onOpenDetail(diary);
+                  }}
+                  testID={`${testIDPrefix}-detail-button`}
+                  variant="ghost"
+                />
+              ) : null}
             </View>
-            {onOpenDetail ? (
-              <AppButton
-                fullWidth={false}
-                label="스토리 상세 보기"
-                onPress={() => {
-                  onClose();
-                  onOpenDetail(diary);
-                }}
-                testID={`${testIDPrefix}-detail-button`}
-                variant="ghost"
-              />
-            ) : null}
-          </View>
-          <View testID={`${testIDPrefix}-body`}>{commentsBody}</View>
+            <View>{commentsBody}</View>
+          </ScrollView>
         </View>
       ) : null}
     </BottomSheet>
@@ -683,9 +689,15 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  previewTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   previewNickname: {
     ...typography.bodyStrong,
     color: colors.text,
+    flexShrink: 1,
   },
   previewMeta: {
     ...typography.caption,
@@ -698,9 +710,12 @@ const styles = StyleSheet.create({
   commentsScroll: {
     maxHeight: 340,
   },
-  commentsContent: {
+  sheetScrollContent: {
     gap: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  commentsContent: {
+    gap: spacing.md,
   },
   loadMoreLabel: {
     ...typography.caption,
