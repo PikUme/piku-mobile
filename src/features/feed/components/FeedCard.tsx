@@ -181,35 +181,56 @@ export function FeedCard({
       </View>
 
       <View style={styles.contentBlock}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => onOpenDetail(post)}
-          style={({ pressed }) => pressed && styles.pressed}
-          testID={`feed-content-open-${post.diaryId}`}>
+        {!isExpanded ? (
           <Text
-            numberOfLines={isExpanded ? undefined : 1}
             onTextLayout={(event) => {
-              if (isExpanded) {
-                return;
-              }
-
               setCanExpand(event.nativeEvent.lines.length > 1);
             }}
-            style={styles.contentText}
-            testID={`feed-content-text-${post.diaryId}`}>
+            style={styles.contentMeasureText}
+            testID={`feed-content-measure-${post.diaryId}`}>
             <Text style={styles.contentNickname}>{post.nickname} </Text>
             {post.content}
           </Text>
-        </Pressable>
-        {!isExpanded && canExpand ? (
+        ) : null}
+        {canExpand && !isExpanded ? (
+          <View style={styles.contentInlineRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => onOpenDetail(post)}
+              style={({ pressed }) => [styles.contentInlinePressable, pressed && styles.pressed]}
+              testID={`feed-content-open-${post.diaryId}`}>
+              <Text
+                ellipsizeMode="tail"
+                numberOfLines={1}
+                style={styles.contentText}
+                testID={`feed-content-text-${post.diaryId}`}>
+                <Text style={styles.contentNickname}>{post.nickname} </Text>
+                {post.content}
+              </Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setIsExpanded(true)}
+              style={({ pressed }) => [styles.moreInlineButton, pressed && styles.pressed]}
+              testID={`feed-content-more-${post.diaryId}`}>
+              <Text style={styles.moreLabel}>더보기</Text>
+            </Pressable>
+          </View>
+        ) : (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setIsExpanded(true)}
+            onPress={() => onOpenDetail(post)}
             style={({ pressed }) => pressed && styles.pressed}
-            testID={`feed-content-more-${post.diaryId}`}>
-            <Text style={styles.moreLabel}>더 보기</Text>
+            testID={`feed-content-open-${post.diaryId}`}>
+            <Text
+              numberOfLines={isExpanded ? undefined : 1}
+              style={styles.contentText}
+              testID={`feed-content-text-${post.diaryId}`}>
+              <Text style={styles.contentNickname}>{post.nickname} </Text>
+              {post.content}
+            </Text>
           </Pressable>
-        ) : null}
+        )}
       </View>
 
       <Text style={styles.timeAgo}>{formatTimeAgo(post.createdAt)}</Text>
@@ -328,9 +349,28 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   contentBlock: {
+    position: 'relative',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.xs,
+  },
+  contentMeasureText: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.lg,
+    right: spacing.lg,
+    opacity: 0,
+    ...typography.body,
+    color: 'transparent',
+  },
+  contentInlineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  contentInlinePressable: {
+    flex: 1,
+    minWidth: 0,
   },
   contentText: {
     ...typography.body,
@@ -338,6 +378,10 @@ const styles = StyleSheet.create({
   },
   contentNickname: {
     fontWeight: '700',
+  },
+  moreInlineButton: {
+    flexShrink: 0,
+    marginLeft: 2,
   },
   moreLabel: {
     ...typography.caption,
