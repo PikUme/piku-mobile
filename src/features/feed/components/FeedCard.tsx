@@ -365,12 +365,13 @@ const styles = StyleSheet.create({
   contentBlock: {
     position: 'relative',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     gap: spacing.xs,
   },
   contentMeasureText: {
     position: 'absolute',
-    top: spacing.sm,
+    top: spacing.md,
     left: spacing.lg,
     right: spacing.lg,
     opacity: 0,
