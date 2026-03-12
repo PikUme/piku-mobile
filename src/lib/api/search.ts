@@ -4,6 +4,14 @@ import type { ApiError } from '@/lib/api/errors';
 import type { Page } from '@/types/api';
 import type { Friend } from '@/types/friend';
 
+type RawSearchFriend = Partial<Friend> & {
+  id?: string;
+};
+
+interface RawSearchPage extends Omit<Page<Friend>, 'content'> {
+  content: RawSearchFriend[];
+}
+
 const LOCAL_SEARCH_USERS: Friend[] = [
   {
     userId: 'user-2',
@@ -80,6 +88,38 @@ function buildLocalSearchPage(keyword: string, page: number, size: number): Page
   };
 }
 
+function normalizeSearchPage(data: RawSearchPage, fallbackPage: number, fallbackSize: number) {
+  const content = Array.isArray(data.content)
+    ? data.content
+        .map((user) => {
+          const userId =
+            (typeof user.userId === 'string' && user.userId) ||
+            (typeof user.id === 'string' && user.id) ||
+            '';
+
+          if (!userId) {
+            return null;
+          }
+
+          return {
+            userId,
+            nickname: typeof user.nickname === 'string' ? user.nickname : '',
+            avatar: typeof user.avatar === 'string' ? user.avatar : '',
+          } satisfies Friend;
+        })
+        .filter((user): user is Friend => user !== null)
+    : [];
+
+  return {
+    content,
+    last: typeof data.last === 'boolean' ? data.last : true,
+    totalElements:
+      typeof data.totalElements === 'number' ? data.totalElements : content.length,
+    number: typeof data.number === 'number' ? data.number : fallbackPage,
+    size: typeof data.size === 'number' ? data.size : fallbackSize,
+  } satisfies Page<Friend>;
+}
+
 export async function searchUsers(
   keyword: string,
   page: number,
@@ -101,7 +141,7 @@ export async function searchUsers(
   }
 
   try {
-    const response = await apiClient.get<Page<Friend>>('/search', {
+    const response = await apiClient.get<RawSearchPage>('/search', {
       params: {
         keyword: normalizedKeyword,
         page,
@@ -109,7 +149,7 @@ export async function searchUsers(
       },
     });
 
-    return response.data;
+    return normalizeSearchPage(response.data, page, size);
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {
       return buildLocalSearchPage(normalizedKeyword, page, size);
