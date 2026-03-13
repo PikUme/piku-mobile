@@ -131,6 +131,22 @@ describe('ComposeScreen', () => {
     ).toBeTruthy();
   });
 
+  it('shows an error banner when opening the library fails', async () => {
+    (ImagePicker.launchImageLibraryAsync as jest.Mock).mockRejectedValue(
+      new Error('앨범을 열지 못했습니다.'),
+    );
+
+    const screen = await renderComposeScreen();
+
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('compose-error-banner')).toBeTruthy(),
+    );
+    expect(screen.getByText('앨범을 열지 못했습니다.')).toBeTruthy();
+  });
+
   it('adds a camera photo when the camera action is used', async () => {
     (ImagePicker.launchCameraAsync as jest.Mock).mockResolvedValue({
       canceled: false,

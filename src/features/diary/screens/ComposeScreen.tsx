@@ -86,6 +86,13 @@ const getTodayDateKey = () => {
   ).padStart(2, '0')}`;
 };
 
+const waitForPickerPresentation = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 180);
+    });
+  });
+
 function ActionCard({
   disabled = false,
   icon,
@@ -234,21 +241,32 @@ export function ComposeScreen() {
       return;
     }
 
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setMessageBanner('사진 보관함 접근 권한이 필요합니다.', true);
-      return;
-    }
+    try {
+      await waitForPickerPresentation();
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsMultipleSelection: true,
-      quality: 1,
-      selectionLimit: availablePhotoSlots,
-    });
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setMessageBanner('사진 보관함 접근 권한이 필요합니다.', true);
+        return;
+      }
 
-    if (!result.canceled) {
-      await handleAddAssets(result.assets.slice(0, availablePhotoSlots));
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: 'images',
+        allowsMultipleSelection: true,
+        quality: 1,
+        selectionLimit: availablePhotoSlots,
+      });
+
+      if (!result.canceled) {
+        await handleAddAssets(result.assets.slice(0, availablePhotoSlots));
+      }
+    } catch (requestError) {
+      setMessageBanner(
+        requestError instanceof Error
+          ? requestError.message
+          : '앨범을 열지 못했습니다.',
+        true,
+      );
     }
   };
 
@@ -260,20 +278,31 @@ export function ComposeScreen() {
       return;
     }
 
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      setMessageBanner('카메라 접근 권한이 필요합니다.', true);
-      return;
-    }
+    try {
+      await waitForPickerPresentation();
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: 'images',
-      allowsEditing: false,
-      quality: 1,
-    });
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        setMessageBanner('카메라 접근 권한이 필요합니다.', true);
+        return;
+      }
 
-    if (!result.canceled) {
-      await handleAddAssets(result.assets.slice(0, 1));
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: 'images',
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        await handleAddAssets(result.assets.slice(0, 1));
+      }
+    } catch (requestError) {
+      setMessageBanner(
+        requestError instanceof Error
+          ? requestError.message
+          : '카메라를 열지 못했습니다.',
+        true,
+      );
     }
   };
 
