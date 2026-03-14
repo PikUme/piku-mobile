@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,12 +16,12 @@ import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ImagePreviewViewer } from '@/components/ui/ImagePreviewViewer';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
+import { ComposePhotoReorderGrid } from '@/features/diary/components/ComposePhotoReorderGrid';
 import {
   MAX_DIARY_CONTENT_LENGTH,
   MAX_TOTAL_PHOTOS,
   buildDiaryCreatePayload,
   getAvailablePhotoSlots,
-  moveComposePhoto,
 } from '@/features/diary/lib/compose';
 import { compressPickedImage, createAiComposePhoto } from '@/features/diary/lib/media';
 import {
@@ -350,18 +349,6 @@ export function ComposeScreen() {
     setMessageBanner('사진을 삭제했습니다.');
   };
 
-  const handlePromotePhoto = (photoId: string) => {
-    setPhotos((current) => {
-      const fromIndex = current.findIndex((photo) => photo.id === photoId);
-      if (fromIndex <= 0) {
-        return current;
-      }
-
-      return moveComposePhoto(current, fromIndex, 0);
-    });
-    setMessageBanner('사진 순서를 변경했습니다.');
-  };
-
   const handleSave = async () => {
     if (!content.trim()) {
       setMessageBanner('일기 내용을 입력해주세요.', true);
@@ -464,57 +451,22 @@ export function ComposeScreen() {
           </View>
 
           <Text style={styles.photoHelperText}>
-            사진을 누르면 대표 사진으로 이동하고, 길게 누르면 크게 볼 수 있습니다.
+            길게 눌러 드래그하면 순서를 바꿀 수 있고, 첫 사진이 대표 사진이 됩니다.
+            사진을 탭하면 대표 사진으로 이동하거나 크게 볼 수 있습니다.
           </Text>
 
-          <ScrollView
-            horizontal
-            contentContainerStyle={styles.photoStrip}
-            showsHorizontalScrollIndicator={false}>
-            {photos.map((photo, index) => (
-              <View key={photo.id} style={styles.photoCard} testID={`compose-photo-card-${photo.id}`}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    if (index === 0) {
-                      setPreviewUri(photo.previewUri);
-                      setIsPreviewVisible(true);
-                      return;
-                    }
-
-                    handlePromotePhoto(photo.id);
-                  }}
-                  onLongPress={() => {
-                    setPreviewUri(photo.previewUri);
-                    setIsPreviewVisible(true);
-                  }}
-                  style={({ pressed }) => [styles.photoPreviewFrame, pressed && styles.pressed]}
-                  testID={`compose-photo-preview-${photo.id}`}>
-                  <Image source={{ uri: photo.previewUri }} style={styles.photoPreviewImage} />
-                  {index === 0 ? (
-                    <View
-                      style={styles.coverBadge}
-                      testID={`compose-photo-cover-badge-${photo.id}`}>
-                      <Text style={styles.coverBadgeLabel}>대표 사진</Text>
-                    </View>
-                  ) : null}
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={(event) => {
-                      event?.stopPropagation?.();
-                      handleRemovePhoto(photo.id);
-                    }}
-                    style={({ pressed }) => [
-                      styles.photoRemoveButton,
-                      pressed && styles.pressed,
-                    ]}
-                    testID={`compose-photo-remove-${photo.id}`}>
-                    <Ionicons color={colors.white} name="close" size={16} />
-                  </Pressable>
-                </Pressable>
-              </View>
-            ))}
-          </ScrollView>
+          <ComposePhotoReorderGrid
+            onChange={(nextPhotos) => {
+              setPhotos(nextPhotos);
+              setMessageBanner('사진 순서를 변경했습니다.');
+            }}
+            onPreview={(uri) => {
+              setPreviewUri(uri);
+              setIsPreviewVisible(true);
+            }}
+            onRemove={handleRemovePhoto}
+            photos={photos}
+          />
 
           <View style={styles.metaRow}>
             <View style={styles.userBlock}>
@@ -750,49 +702,6 @@ const styles = StyleSheet.create({
   photoHelperText: {
     ...typography.caption,
     color: colors.mutedText,
-  },
-  photoStrip: {
-    gap: spacing.md,
-  },
-  photoCard: {
-    width: 128,
-  },
-  photoPreviewFrame: {
-    width: 128,
-    height: 128,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.surfaceMuted,
-  },
-  photoPreviewImage: {
-    width: '100%',
-    height: '100%',
-  },
-  photoRemoveButton: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 28,
-    height: 28,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(17, 24, 39, 0.72)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coverBadge: {
-    position: 'absolute',
-    left: spacing.sm,
-    right: spacing.sm,
-    bottom: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.xs,
-  },
-  coverBadgeLabel: {
-    ...typography.caption,
-    color: colors.white,
-    textAlign: 'center',
-    fontWeight: '700',
   },
   metaRow: {
     flexDirection: 'row',
