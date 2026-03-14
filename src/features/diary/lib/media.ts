@@ -6,6 +6,15 @@ import type { ComposePhoto, UploadablePhotoFile } from '@/types/diary';
 const MAX_IMAGE_WIDTH = 1600;
 const JPEG_COMPRESS_QUALITY = 0.82;
 
+export function getComposePhotoSourceKey(asset: ImagePickerAsset) {
+  if (asset.assetId) {
+    return `asset:${asset.assetId}`;
+  }
+
+  const normalizedUri = asset.uri.split('?')[0];
+  return `uri:${normalizedUri}|name:${asset.fileName ?? ''}|size:${asset.fileSize ?? ''}`;
+}
+
 function getFileName(uri: string, fallbackPrefix: string) {
   const candidate = uri.split('/').pop();
   return candidate && candidate.includes('.')
@@ -38,6 +47,7 @@ export async function compressPickedImage(
     id: asset.assetId ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type: 'user',
     previewUri: manipulated.uri,
+    sourceKey: getComposePhotoSourceKey(asset),
     uploadFile: createUploadFile(manipulated.uri, asset),
   };
 }

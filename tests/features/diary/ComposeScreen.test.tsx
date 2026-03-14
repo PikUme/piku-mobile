@@ -131,6 +131,71 @@ describe('ComposeScreen', () => {
     ).toBeTruthy();
   });
 
+  it('does not add the same library photo twice', async () => {
+    (ImagePicker.launchImageLibraryAsync as jest.Mock)
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [createPickerAsset()],
+      })
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [createPickerAsset()],
+      });
+
+    const screen = await renderComposeScreen();
+
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('compose-photo-card-picked-photo-1')).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
+
+    await waitFor(() =>
+      expect(screen.getByText('같은 사진은 한 번만 추가할 수 있습니다.')).toBeTruthy(),
+    );
+    expect(screen.queryAllByTestId('compose-photo-card-picked-photo-1')).toHaveLength(1);
+  });
+
+  it('adds only unique photos when duplicate selections are mixed in', async () => {
+    (ImagePicker.launchImageLibraryAsync as jest.Mock)
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [createPickerAsset()],
+      })
+      .mockResolvedValueOnce({
+        canceled: false,
+        assets: [
+          createPickerAsset(),
+          createPickerAsset({
+            assetId: 'picked-photo-2',
+            fileName: 'picked-photo-2.jpg',
+            uri: 'file:///picked-photo-2.jpg',
+          }),
+        ],
+      });
+
+    const screen = await renderComposeScreen();
+
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('compose-photo-card-picked-photo-1')).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId('compose-add-photo-button'));
+    fireEvent.press(screen.getByTestId('compose-photo-source-library'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('compose-photo-card-picked-photo-2')).toBeTruthy(),
+    );
+    expect(screen.getByText('중복 사진을 제외하고 추가했습니다.')).toBeTruthy();
+  });
+
   it('shows an error banner when opening the library fails', async () => {
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockRejectedValue(
       new Error('앨범을 열지 못했습니다.'),
@@ -182,7 +247,7 @@ describe('ComposeScreen', () => {
     );
   });
 
-  it('reorders and removes selected photos', async () => {
+  it('previews and removes selected photos', async () => {
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
       canceled: false,
       assets: [
@@ -206,7 +271,7 @@ describe('ComposeScreen', () => {
 
     fireEvent.press(screen.getByTestId('compose-photo-preview-picked-photo-2'));
     await waitFor(() =>
-      expect(screen.getByTestId('compose-photo-cover-badge-picked-photo-2')).toBeTruthy(),
+      expect(screen.getByTestId('image-preview-close-button')).toBeTruthy(),
     );
 
     fireEvent.press(screen.getByTestId('compose-photo-remove-picked-photo-1'));

@@ -23,7 +23,11 @@ import {
   buildDiaryCreatePayload,
   getAvailablePhotoSlots,
 } from '@/features/diary/lib/compose';
-import { compressPickedImage, createAiComposePhoto } from '@/features/diary/lib/media';
+import {
+  compressPickedImage,
+  createAiComposePhoto,
+  getComposePhotoSourceKey,
+} from '@/features/diary/lib/media';
 import {
   getSavedComposePrivacy,
   setSavedComposePrivacy,
@@ -217,9 +221,35 @@ export function ComposeScreen() {
     setErrorMessage('');
 
     try {
-      const nextPhotos = await Promise.all(assets.map((asset) => compressPickedImage(asset)));
+      const knownPhotoSourceKeys = new Set(
+        photos
+          .filter((photo) => photo.type === 'user')
+          .map((photo) => photo.sourceKey ?? `asset:${photo.id}`),
+      );
+      const uniqueAssets: ImagePicker.ImagePickerAsset[] = [];
+      let duplicateCount = 0;
+
+      assets.forEach((asset) => {
+        const sourceKey = getComposePhotoSourceKey(asset);
+        if (knownPhotoSourceKeys.has(sourceKey)) {
+          duplicateCount += 1;
+          return;
+        }
+
+        knownPhotoSourceKeys.add(sourceKey);
+        uniqueAssets.push(asset);
+      });
+
+      if (uniqueAssets.length === 0) {
+        setMessageBanner('같은 사진은 한 번만 추가할 수 있습니다.');
+        return;
+      }
+
+      const nextPhotos = await Promise.all(uniqueAssets.map((asset) => compressPickedImage(asset)));
       setPhotos((current) => [...current, ...nextPhotos].slice(0, MAX_TOTAL_PHOTOS));
-      setMessageBanner('사진이 추가되었습니다.');
+      setMessageBanner(
+        duplicateCount > 0 ? '중복 사진을 제외하고 추가했습니다.' : '사진이 추가되었습니다.',
+      );
     } catch (requestError) {
       setMessageBanner(
         requestError instanceof Error
@@ -452,7 +482,7 @@ export function ComposeScreen() {
 
           <Text style={styles.photoHelperText}>
             길게 눌러 드래그하면 순서를 바꿀 수 있고, 첫 사진이 대표 사진이 됩니다.
-            사진을 탭하면 대표 사진으로 이동하거나 크게 볼 수 있습니다.
+            사진을 탭하면 크게 볼 수 있습니다.
           </Text>
 
           <ComposePhotoReorderGrid

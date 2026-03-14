@@ -78,6 +78,7 @@ export interface ComposePhoto {
   id: string;
   type: 'ai' | 'user';
   previewUri: string;
+  sourceKey?: string;
   aiPhotoId?: number;
   uploadFile?: UploadablePhotoFile;
 }

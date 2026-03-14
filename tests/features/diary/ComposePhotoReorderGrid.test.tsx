@@ -2,6 +2,9 @@ import {
   getComposePhotoDropIndex,
   getComposePhotoSlot,
 } from '@/features/diary/components/ComposePhotoReorderGrid';
+import { ComposePhotoReorderGrid } from '@/features/diary/components/ComposePhotoReorderGrid';
+import { fireEvent, render } from '@testing-library/react-native';
+import React from 'react';
 
 describe('ComposePhotoReorderGrid', () => {
   it('returns grid slot coordinates for the 3-column layout', () => {
@@ -38,5 +41,35 @@ describe('ComposePhotoReorderGrid', () => {
         itemSize: 100,
       }),
     ).toBe(4);
+  });
+
+  it('opens preview on tap without reordering photos', () => {
+    const handleChange = jest.fn();
+    const handlePreview = jest.fn();
+
+    const screen = render(
+      <ComposePhotoReorderGrid
+        onChange={handleChange}
+        onPreview={handlePreview}
+        onRemove={jest.fn()}
+        photos={[
+          {
+            id: 'photo-1',
+            type: 'user',
+            previewUri: 'file:///photo-1.jpg',
+          },
+          {
+            id: 'photo-2',
+            type: 'user',
+            previewUri: 'file:///photo-2.jpg',
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('compose-photo-preview-photo-2'));
+
+    expect(handlePreview).toHaveBeenCalledWith('file:///photo-2.jpg');
+    expect(handleChange).not.toHaveBeenCalled();
   });
 });

@@ -1,16 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   LayoutChangeEvent,
-  PanResponder,
-  type PanResponderGestureState,
   Pressable,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { moveComposePhoto } from '@/features/diary/lib/compose';
 import type { ComposePhoto } from '@/types/diary';
@@ -92,61 +91,80 @@ export function ComposePhotoReorderGrid({
   );
 
   const positionValuesRef = useRef<Record<string, Animated.ValueXY>>({});
-  const panRespondersRef = useRef<Record<string, ReturnType<typeof PanResponder.create>>>({});
   const currentOrderRef = useRef(photos);
   const activePhotoIdRef = useRef<string | null>(null);
   const dragOriginSlotRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartIndexRef = useRef<number | null>(null);
   const dragCurrentIndexRef = useRef<number | null>(null);
-  const longPressTriggeredRef = useRef<Record<string, boolean>>({});
 
-  const animatePhotoToSlot = useCallback((photoId: string, index: number, animated = true) => {
-    const position = positionValuesRef.current[photoId];
-    if (!position || itemSize <= 0) {
-      return;
-    }
-
-    const nextSlot = getComposePhotoSlot(index, itemSize);
-
-    if (!animated) {
-      position.setValue(nextSlot);
-      return;
-    }
-
-    Animated.spring(position, {
-      toValue: nextSlot,
-      damping: 18,
-      mass: 0.7,
-      stiffness: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [itemSize]);
-
-  const syncPositionsToOrder = useCallback((order: ComposePhoto[], animated = true) => {
-    if (itemSize <= 0) {
-      return;
-    }
-
-    order.forEach((photo, index) => {
-      if (activePhotoIdRef.current === photo.id) {
+  const animatePhotoToSlot = useCallback(
+    (photoId: string, index: number, animated = true) => {
+      const position = positionValuesRef.current[photoId];
+      if (!position || itemSize <= 0) {
         return;
       }
 
-      animatePhotoToSlot(photo.id, index, animated);
-    });
-  }, [animatePhotoToSlot, itemSize]);
+      const nextSlot = getComposePhotoSlot(index, itemSize);
+
+      if (!animated) {
+        position.setValue(nextSlot);
+        return;
+      }
+
+      Animated.spring(position, {
+        toValue: nextSlot,
+        damping: 18,
+        mass: 0.7,
+        stiffness: 220,
+        useNativeDriver: true,
+      }).start();
+    },
+    [itemSize],
+  );
+
+  const syncPositionsToOrder = useCallback(
+    (order: ComposePhoto[], animated = true) => {
+      if (itemSize <= 0) {
+        return;
+      }
+
+      order.forEach((photo, index) => {
+        if (activePhotoIdRef.current === photo.id) {
+          return;
+        }
+
+        animatePhotoToSlot(photo.id, index, animated);
+      });
+    },
+    [animatePhotoToSlot, itemSize],
+  );
 
   useEffect(() => {
     Object.keys(positionValuesRef.current).forEach((photoId) => {
       if (!photos.some((photo) => photo.id === photoId)) {
         delete positionValuesRef.current[photoId];
-        delete panRespondersRef.current[photoId];
-        delete longPressTriggeredRef.current[photoId];
       }
     });
 
     currentOrderRef.current = photos;
     syncPositionsToOrder(photos, true);
   }, [itemSize, photos, syncPositionsToOrder]);
+
+  const resetDragState = (photoId: string | null) => {
+    if (photoId) {
+      const finalOrder = currentOrderRef.current;
+      const finalIndex = finalOrder.findIndex((photo) => photo.id === photoId);
+      if (finalIndex >= 0) {
+        animatePhotoToSlot(photoId, finalIndex, true);
+      }
+    }
+
+    activePhotoIdRef.current = null;
+    dragOriginSlotRef.current = null;
+    dragStartIndexRef.current = null;
+    dragCurrentIndexRef.current = null;
+    setActivePhotoId(null);
+  };
 
   const finishDrag = (photoId: string) => {
     if (activePhotoIdRef.current !== photoId) {
@@ -155,15 +173,13 @@ export function ComposePhotoReorderGrid({
 
     const finalOrder = currentOrderRef.current;
     const finalIndex = finalOrder.findIndex((photo) => photo.id === photoId);
-    if (finalIndex >= 0) {
-      animatePhotoToSlot(photoId, finalIndex, true);
+    const startIndex = dragStartIndexRef.current;
+
+    resetDragState(photoId);
+
+    if (startIndex !== null && finalIndex >= 0 && finalIndex !== startIndex) {
       onChange(finalOrder);
     }
-
-    activePhotoIdRef.current = null;
-    dragOriginSlotRef.current = null;
-    dragCurrentIndexRef.current = null;
-    setActivePhotoId(null);
   };
 
   const cancelDrag = (photoId: string) => {
@@ -172,19 +188,11 @@ export function ComposePhotoReorderGrid({
     }
 
     currentOrderRef.current = photos;
-    const originalIndex = photos.findIndex((photo) => photo.id === photoId);
-    if (originalIndex >= 0) {
-      animatePhotoToSlot(photoId, originalIndex, true);
-    }
-
-    activePhotoIdRef.current = null;
-    dragOriginSlotRef.current = null;
-    dragCurrentIndexRef.current = null;
-    setActivePhotoId(null);
+    resetDragState(photoId);
   };
 
   const startDrag = (photoId: string) => {
-    if (itemSize <= 0) {
+    if (itemSize <= 0 || activePhotoIdRef.current === photoId) {
       return;
     }
 
@@ -193,14 +201,14 @@ export function ComposePhotoReorderGrid({
       return;
     }
 
-    longPressTriggeredRef.current[photoId] = true;
     activePhotoIdRef.current = photoId;
+    dragStartIndexRef.current = startIndex;
     dragCurrentIndexRef.current = startIndex;
     dragOriginSlotRef.current = getComposePhotoSlot(startIndex, itemSize);
     setActivePhotoId(photoId);
   };
 
-  const handleDragMove = (photoId: string, gestureState: PanResponderGestureState) => {
+  const handleDragMove = (photoId: string, translationX: number, translationY: number) => {
     const activeId = activePhotoIdRef.current;
     const dragOrigin = dragOriginSlotRef.current;
     const currentIndex = dragCurrentIndexRef.current;
@@ -214,8 +222,8 @@ export function ComposePhotoReorderGrid({
       return;
     }
 
-    const nextX = dragOrigin.x + gestureState.dx;
-    const nextY = dragOrigin.y + gestureState.dy;
+    const nextX = dragOrigin.x + translationX;
+    const nextY = dragOrigin.y + translationY;
     position.setValue({ x: nextX, y: nextY });
 
     const nextIndex = getComposePhotoDropIndex({
@@ -235,37 +243,14 @@ export function ComposePhotoReorderGrid({
     syncPositionsToOrder(nextOrder, true);
   };
 
-  const getPanResponder = (photoId: string) => {
-    if (panRespondersRef.current[photoId]) {
-      return panRespondersRef.current[photoId];
-    }
-
-    panRespondersRef.current[photoId] = PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        activePhotoIdRef.current === photoId &&
-        (Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2),
-      onPanResponderMove: (_, gestureState) => {
-        handleDragMove(photoId, gestureState);
-      },
-      onPanResponderRelease: () => {
-        finishDrag(photoId);
-      },
-      onPanResponderTerminate: () => {
-        cancelDrag(photoId);
-      },
-      onPanResponderTerminationRequest: () => false,
-    });
-
-    return panRespondersRef.current[photoId];
-  };
-
   const handleLayout = (event: LayoutChangeEvent) => {
     setContainerWidth(event.nativeEvent.layout.width);
   };
 
   return (
-    <View onLayout={handleLayout} style={[styles.container, gridHeight > 0 && { height: gridHeight }]}>
+    <View
+      onLayout={handleLayout}
+      style={[styles.container, gridHeight > 0 && { height: gridHeight }]}>
       {photos.map((photo, index) => {
         if (!positionValuesRef.current[photo.id] && itemSize > 0) {
           positionValuesRef.current[photo.id] = new Animated.ValueXY(
@@ -278,9 +263,27 @@ export function ComposePhotoReorderGrid({
           return null;
         }
 
-        const panResponder = getPanResponder(photo.id);
         const isCover = index === 0;
         const isActive = activePhotoId === photo.id;
+        const dragGesture = Gesture.Pan()
+          .runOnJS(true)
+          .activateAfterLongPress(DRAG_ACTIVATION_DELAY)
+          .shouldCancelWhenOutside(false)
+          .maxPointers(1)
+          .onStart(() => {
+            startDrag(photo.id);
+          })
+          .onUpdate((event) => {
+            handleDragMove(photo.id, event.translationX, event.translationY);
+          })
+          .onEnd(() => {
+            finishDrag(photo.id);
+          })
+          .onFinalize(() => {
+            if (activePhotoIdRef.current === photo.id) {
+              cancelDrag(photo.id);
+            }
+          });
 
         return (
           <Animated.View
@@ -295,48 +298,32 @@ export function ComposePhotoReorderGrid({
               },
             ]}
             testID={`compose-photo-card-${photo.id}`}>
-            <Pressable
-              accessibilityRole="button"
-              delayLongPress={DRAG_ACTIVATION_DELAY}
-              onLongPress={() => startDrag(photo.id)}
-              onPress={() => {
-                if (longPressTriggeredRef.current[photo.id]) {
-                  longPressTriggeredRef.current[photo.id] = false;
-                  return;
-                }
-
-                if (index === 0) {
+            <GestureDetector gesture={dragGesture}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
                   onPreview(photo.previewUri);
-                  return;
-                }
-
-                onChange(moveComposePhoto(photos, index, 0));
-              }}
-              onPressOut={() => {
-                if (activePhotoIdRef.current === photo.id) {
-                  cancelDrag(photo.id);
-                }
-              }}
-              style={({ pressed }) => [
-                styles.photoPreviewFrame,
-                {
-                  width: itemSize,
-                  height: itemSize,
-                },
-                pressed && !isActive && styles.pressed,
-                isActive && styles.activePhotoFrame,
-              ]}
-              testID={`compose-photo-preview-${photo.id}`}
-              {...panResponder.panHandlers}>
-              <Animated.Image source={{ uri: photo.previewUri }} style={styles.photoPreviewImage} />
-              {isCover ? (
-                <View
-                  style={styles.coverBadge}
-                  testID={`compose-photo-cover-badge-${photo.id}`}>
-                  <Text style={styles.coverBadgeLabel}>대표 사진</Text>
-                </View>
-              ) : null}
-            </Pressable>
+                }}
+                style={({ pressed }) => [
+                  styles.photoPreviewFrame,
+                  {
+                    width: itemSize,
+                    height: itemSize,
+                  },
+                  pressed && !isActive && styles.pressed,
+                  isActive && styles.activePhotoFrame,
+                ]}
+                testID={`compose-photo-preview-${photo.id}`}>
+                <Animated.Image source={{ uri: photo.previewUri }} style={styles.photoPreviewImage} />
+                {isCover ? (
+                  <View
+                    style={styles.coverBadge}
+                    testID={`compose-photo-cover-badge-${photo.id}`}>
+                    <Text style={styles.coverBadgeLabel}>대표 사진</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </GestureDetector>
 
             <Pressable
               accessibilityRole="button"
