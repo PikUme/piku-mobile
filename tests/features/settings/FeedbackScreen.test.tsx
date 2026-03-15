@@ -23,7 +23,7 @@ describe('FeedbackScreen', () => {
     jest.restoreAllMocks();
   });
 
-  it('submits feedback content without an image', async () => {
+  it('submits inquiry content without an image', async () => {
     const submitSpy = jest.spyOn(inquiryApi, 'submitInquiry').mockResolvedValue();
     const alertSpy = jest.spyOn(feedback, 'showAlert').mockImplementation(() => undefined);
 
@@ -39,10 +39,10 @@ describe('FeedbackScreen', () => {
       }),
     );
     await waitFor(() => expect(routerMock.back).toHaveBeenCalled());
-    expect(alertSpy).toHaveBeenCalledWith('피드백 제출 완료', '보내주신 내용을 확인한 뒤 반영하겠습니다.');
+    expect(alertSpy).toHaveBeenCalledWith('문의 접수 완료', '보내주신 내용을 확인한 뒤 안내드리겠습니다.');
   });
 
-  it('picks an image and includes it in the feedback payload', async () => {
+  it('picks an image and includes it in the inquiry payload', async () => {
     const submitSpy = jest.spyOn(inquiryApi, 'submitInquiry').mockResolvedValue();
     jest.spyOn(feedback, 'showAlert').mockImplementation(() => undefined);
     (ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({

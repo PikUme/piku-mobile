@@ -200,7 +200,7 @@ export function AppBottomTabBar() {
       </View>
 
       <BottomSheet
-        description="프로필, 설정, 피드백으로 이동하거나 로그아웃할 수 있습니다."
+        description="프로필, 설정, 문의로 이동하거나 로그아웃할 수 있습니다."
         onClose={() => setIsMoreSheetVisible(false)}
         title="더보기"
         visible={isMoreSheetVisible}>
@@ -229,7 +229,7 @@ export function AppBottomTabBar() {
               setIsMoreSheetVisible(false);
               router.push('/feedback');
             }}
-            title="피드백"
+            title="문의"
           />
           <ListItemCard
             description="현재 계정 세션을 종료합니다."

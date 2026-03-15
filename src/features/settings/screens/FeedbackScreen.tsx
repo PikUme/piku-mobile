@@ -53,17 +53,17 @@ export function FeedbackScreen() {
         image: image
           ? {
               uri: image.uri,
-              name: image.fileName ?? `feedback-${Date.now()}.jpg`,
+              name: image.fileName ?? `inquiry-${Date.now()}.jpg`,
               type: image.mimeType ?? 'image/jpeg',
             }
           : null,
       });
-      showAlert('피드백 제출 완료', '보내주신 내용을 확인한 뒤 반영하겠습니다.');
+      showAlert('문의 접수 완료', '보내주신 내용을 확인한 뒤 안내드리겠습니다.');
       router.back();
     } catch (error) {
       showAlert(
-        '피드백 제출 실패',
-        error instanceof Error ? error.message : '피드백을 제출하지 못했습니다.',
+        '문의 접수 실패',
+        error instanceof Error ? error.message : '문의를 접수하지 못했습니다.',
       );
     } finally {
       setIsSubmitting(false);
@@ -82,7 +82,7 @@ export function FeedbackScreen() {
             <Ionicons color={colors.text} name="close" size={20} />
           </Pressable>
         }
-        title="피드백"
+        title="문의"
       />
 
       <View style={styles.section}>

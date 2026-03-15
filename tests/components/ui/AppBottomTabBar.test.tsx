@@ -53,7 +53,7 @@ describe('AppBottomTabBar', () => {
     fireEvent.press(screen.getByTestId('bottom-tab-more'));
     expect(screen.getByText('프로필')).toBeTruthy();
     expect(screen.getByText('설정')).toBeTruthy();
-    expect(screen.getByText('피드백')).toBeTruthy();
+    expect(screen.getByText('문의')).toBeTruthy();
     expect(screen.getByText('로그아웃')).toBeTruthy();
   });
 });

@@ -164,7 +164,7 @@ export function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>지원</Text>
         <SettingsRow
-          label="피드백 보내기"
+          label="문의하기"
           onPress={() => router.push('/feedback')}
           testID="settings-feedback-row"
         />
