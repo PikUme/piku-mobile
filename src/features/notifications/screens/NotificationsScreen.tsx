@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { AppHeader } from '@/components/ui/AppHeader';
@@ -319,7 +319,11 @@ export function NotificationsScreen() {
               </View>
               <View style={styles.rowTrailing}>
                 {item.thumbnailUrl ? (
-                  <View style={styles.thumbnailPlaceholder} testID={`notification-thumbnail-${item.id}`} />
+                  <Image
+                    source={{ uri: item.thumbnailUrl }}
+                    style={styles.thumbnailImage}
+                    testID={`notification-thumbnail-${item.id}`}
+                  />
                 ) : null}
                 <Pressable
                   accessibilityLabel="알림 삭제"
@@ -423,11 +427,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  thumbnailPlaceholder: {
+  thumbnailImage: {
     width: 48,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
   },

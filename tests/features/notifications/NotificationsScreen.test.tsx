@@ -55,7 +55,11 @@ describe('NotificationsScreen', () => {
     jest.spyOn(notificationsApi, 'getNotifications').mockResolvedValue(
       buildPage(
         [
-          buildNotification(501, { nickname: '도리', isRead: false }),
+          buildNotification(501, {
+            nickname: '도리',
+            isRead: false,
+            thumbnailUrl: 'https://picsum.photos/seed/notification-501/120/120',
+          }),
           buildNotification(502, { nickname: '모아', isRead: true }),
           buildNotification(503, { nickname: '하루', isRead: false }),
         ],
@@ -67,6 +71,7 @@ describe('NotificationsScreen', () => {
     const screen = renderWithProviders(<NotificationsScreen />);
 
     await waitFor(() => expect(screen.getByTestId('notification-row-501')).toBeTruthy());
+    expect(screen.getByTestId('notification-thumbnail-501')).toBeTruthy();
     expect(useNotificationStore.getState().unreadCount).toBe(2);
     expect(screen.getByTestId('notifications-read-all-button')).toBeTruthy();
   });

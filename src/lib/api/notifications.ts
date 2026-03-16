@@ -4,6 +4,19 @@ import type { ApiError } from '@/lib/api/errors';
 import type { Page } from '@/types/api';
 import type { AppNotification } from '@/types/notification';
 
+interface RawNotification {
+  id?: number;
+  message?: string;
+  nickname?: string;
+  avatarUrl?: string | null;
+  type?: AppNotification['type'];
+  relatedDiaryId?: number | null;
+  thumbnailUrl?: string | null;
+  isRead?: boolean;
+  diaryDate?: string | null;
+  diaryUserId?: string | null;
+}
+
 const LOCAL_NOTIFICATIONS: AppNotification[] = [
   {
     id: 501,
@@ -90,6 +103,57 @@ const isRecoverableLocalNetworkError = (error: unknown) => {
   );
 };
 
+function getServerOrigin() {
+  return env.apiBaseUrl.replace(/\/$/, '');
+}
+
+function normalizeAssetUrl(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const normalizedPath = value.startsWith('/') ? value.slice(1) : value;
+  return `${getServerOrigin()}/${normalizedPath}`;
+}
+
+function normalizeNotification(
+  notification: RawNotification,
+  fallbackId: number,
+): AppNotification {
+  return {
+    id: typeof notification.id === 'number' ? notification.id : fallbackId,
+    message: typeof notification.message === 'string' ? notification.message : '',
+    nickname: typeof notification.nickname === 'string' ? notification.nickname : '',
+    avatarUrl: normalizeAssetUrl(notification.avatarUrl),
+    type: notification.type ?? 'COMMENT',
+    relatedDiaryId:
+      typeof notification.relatedDiaryId === 'number' ? notification.relatedDiaryId : null,
+    thumbnailUrl: notification.thumbnailUrl ? normalizeAssetUrl(notification.thumbnailUrl) : null,
+    isRead: notification.isRead === true,
+    diaryDate: typeof notification.diaryDate === 'string' ? notification.diaryDate : null,
+    diaryUserId:
+      typeof notification.diaryUserId === 'string' ? notification.diaryUserId : null,
+  };
+}
+
+function normalizeNotificationPage(page: Page<RawNotification>): Page<AppNotification> {
+  return {
+    ...page,
+    content: Array.isArray(page.content)
+      ? page.content.map((notification, index) =>
+          normalizeNotification(
+            notification,
+            typeof notification.id === 'number' ? notification.id : index,
+          ),
+        )
+      : [],
+  };
+}
+
 function buildLocalNotificationPage(page: number, size: number): Page<AppNotification> {
   const start = page * size;
   const end = start + size;
@@ -110,10 +174,10 @@ export async function getNotifications(page = 0, size = 20): Promise<Page<AppNot
   }
 
   try {
-    const response = await apiClient.get<Page<AppNotification>>('/sse/notifications', {
+    const response = await apiClient.get<Page<RawNotification>>('/sse/notifications', {
       params: { page, size },
     });
-    return response.data;
+    return normalizeNotificationPage(response.data);
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {
       return buildLocalNotificationPage(page, size);
