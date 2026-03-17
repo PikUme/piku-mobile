@@ -3,7 +3,8 @@ export type NotificationType =
   | 'FRIEND_ACCEPT'
   | 'COMMENT'
   | 'REPLY'
-  | 'FRIEND_DIARY';
+  | 'FRIEND_DIARY'
+  | 'LIKE';
 
 export interface AppNotification {
   id: number;

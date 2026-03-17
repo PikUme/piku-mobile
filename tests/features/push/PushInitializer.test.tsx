@@ -86,7 +86,7 @@ describe('PushInitializer', () => {
     expect(useNotificationStore.getState().unreadCount).toBe(1);
   });
 
-  it('navigates to the profile calendar when a notification response is tapped', async () => {
+  it('navigates to the diary story when a comment notification response is tapped', async () => {
     renderWithProviders(<PushInitializer forceEnable />);
 
     await waitFor(() => expect(mockResponseListener).toBeTruthy());
@@ -97,6 +97,7 @@ describe('PushInitializer', () => {
           request: {
             content: {
               data: {
+                type: 'COMMENT',
                 diaryUserId: 'user-2',
                 diaryDate: '2026-03-08',
                 relatedDiaryId: 202603080,
@@ -108,11 +109,9 @@ describe('PushInitializer', () => {
     });
 
     expect(routerMock.push).toHaveBeenCalledWith({
-      pathname: '/profile/[userId]/calendar',
+      pathname: '/diary/story',
       params: {
-        userId: 'user-2',
-        date: '2026-03-08',
-        diaryId: '202603080',
+        id: '202603080',
       },
     });
   });

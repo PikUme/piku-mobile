@@ -36,6 +36,18 @@ function flattenNotificationPages(pages: Page<AppNotification>[] = []) {
 }
 
 function buildNotificationRoute(notification: AppNotification) {
+  if (
+    (notification.type === 'LIKE' || notification.type === 'COMMENT') &&
+    notification.relatedDiaryId
+  ) {
+    return {
+      pathname: '/diary/story' as const,
+      params: {
+        id: String(notification.relatedDiaryId),
+      },
+    };
+  }
+
   if (notification.diaryDate && notification.diaryUserId) {
     return {
       pathname: '/profile/[userId]/calendar' as const,

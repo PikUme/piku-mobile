@@ -50,9 +50,19 @@ function getStringValue(value: unknown) {
 }
 
 export function resolvePushNotificationRoute(data: Record<string, unknown>) {
+  const notificationType = getStringValue(data.type);
   const diaryUserId = getStringValue(data.diaryUserId ?? data.userId ?? data.senderUserId);
   const diaryDate = getStringValue(data.diaryDate ?? data.date);
   const diaryId = getStringValue(data.relatedDiaryId ?? data.diaryId);
+
+  if ((notificationType === 'LIKE' || notificationType === 'COMMENT') && diaryId) {
+    return {
+      pathname: '/diary/story' as const,
+      params: {
+        id: diaryId,
+      },
+    };
+  }
 
   if (diaryUserId && diaryDate) {
     return {

@@ -83,6 +83,7 @@ describe('NotificationsScreen', () => {
         [
           buildNotification(502, {
             nickname: '모아',
+            type: 'FRIEND_DIARY',
             diaryUserId: 'user-3',
             diaryDate: '2026-03-07',
             relatedDiaryId: 202603070,
@@ -113,6 +114,40 @@ describe('NotificationsScreen', () => {
     );
     expect(useNotificationStore.getState().unreadCount).toBe(0);
     expect(screen.queryByTestId('notification-unread-dot-502')).toBeNull();
+  });
+
+  it('opens the diary story directly when the notification type is COMMENT', async () => {
+    jest.spyOn(notificationsApi, 'markNotificationAsRead').mockResolvedValue();
+    jest.spyOn(notificationsApi, 'getNotifications').mockResolvedValue(
+      buildPage(
+        [
+          buildNotification(601, {
+            nickname: '모아',
+            type: 'COMMENT',
+            relatedDiaryId: 202603081,
+            diaryDate: '2026-03-08',
+            diaryUserId: 'user-3',
+            isRead: false,
+          }),
+        ],
+        0,
+        true,
+      ),
+    );
+
+    const screen = renderWithProviders(<NotificationsScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('notification-row-601')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('notification-row-601'));
+
+    await waitFor(() =>
+      expect(routerMock.push).toHaveBeenCalledWith({
+        pathname: '/diary/story',
+        params: {
+          id: '202603081',
+        },
+      }),
+    );
   });
 
   it('opens a user profile when the notification does not have diary context', async () => {

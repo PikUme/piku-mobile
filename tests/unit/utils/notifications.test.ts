@@ -1,6 +1,22 @@
 import { resolvePushNotificationRoute } from '@/lib/push/notifications';
 
 describe('resolvePushNotificationRoute', () => {
+  it('builds a diary story route when the notification type is COMMENT', () => {
+    expect(
+      resolvePushNotificationRoute({
+        type: 'COMMENT',
+        diaryUserId: 'user-2',
+        diaryDate: '2026-03-08',
+        relatedDiaryId: 202603080,
+      }),
+    ).toEqual({
+      pathname: '/diary/story',
+      params: {
+        id: '202603080',
+      },
+    });
+  });
+
   it('builds a profile calendar route when diary context exists', () => {
     expect(
       resolvePushNotificationRoute({
