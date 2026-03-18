@@ -86,11 +86,6 @@ export function SearchScreen() {
         <AppTextField
           autoCapitalize="none"
           autoCorrect={false}
-          helperText={
-            isSearchEnabled
-              ? undefined
-              : '닉네임을 입력하면 결과가 자동으로 갱신됩니다.'
-          }
           leading={<Ionicons color={colors.mutedText} name="search" size={18} />}
           onChangeText={setQuery}
           placeholder="닉네임을 입력하세요"
@@ -131,12 +126,7 @@ export function SearchScreen() {
         keyExtractor={(item) => item.userId}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
-          !isSearchEnabled ? (
-            <EmptyState
-              description="검색어를 입력하면 사용자를 바로 찾을 수 있습니다."
-              title="검색어를 입력해주세요."
-            />
-          ) : isPending ? (
+          !isSearchEnabled ? null : isPending ? (
             <LoadingState label="검색 결과를 불러오는 중입니다." />
           ) : (
             <EmptyState

@@ -25,12 +25,14 @@ describe('SearchScreen', () => {
     routerMock.push.mockReset();
   });
 
-  it('shows the initial prompt before a query is entered', () => {
+  it('shows only the search input before a query is entered', () => {
     const screen = renderWithProviders(<SearchScreen />);
 
-    expect(screen.getByText('검색어를 입력해주세요.')).toBeTruthy();
     expect(screen.getByTestId('search-input')).toBeTruthy();
     expect(screen.queryByTestId('shell-brand-title')).toBeNull();
+    expect(screen.queryByText('검색어를 입력해주세요.')).toBeNull();
+    expect(screen.queryByText('검색어를 입력하면 사용자를 바로 찾을 수 있습니다.')).toBeNull();
+    expect(screen.queryByText('닉네임을 입력하면 결과가 자동으로 갱신됩니다.')).toBeNull();
   });
 
   it('debounces input before requesting search results', async () => {

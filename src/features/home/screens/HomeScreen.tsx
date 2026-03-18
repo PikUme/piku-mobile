@@ -184,11 +184,6 @@ export function HomeScreen() {
   }
 
   const activeUser = viewedUser ?? user;
-  const emptyStateText = !monthlyDiariesQuery.isPending && (monthlyDiariesQuery.data?.length ?? 0) === 0
-    ? isOwnCalendar
-      ? '지난 날짜를 눌러 첫 기록을 남길 수 있습니다.'
-      : null
-    : null;
 
   return (
     <ScreenContainer contentStyle={styles.screenContent}>
@@ -221,7 +216,6 @@ export function HomeScreen() {
             <HomeCalendarGrid
               currentDate={currentDate}
               diariesByDate={diariesByDate}
-              emptyStateText={emptyStateText}
               isOwnCalendar={isOwnCalendar}
               viewedUserName={activeUser.nickname}
               onPressDay={handlePressDay}
