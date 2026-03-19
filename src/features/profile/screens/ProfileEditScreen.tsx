@@ -84,7 +84,6 @@ function CharacterOption({
       ) : (
         <Text style={styles.characterFallback}>{fallbackEmoji}</Text>
       )}
-      <Text style={styles.characterLabel}>{character.type}</Text>
     </Pressable>
   );
 }
@@ -458,7 +457,6 @@ const styles = StyleSheet.create({
     minWidth: 148,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
@@ -480,11 +478,6 @@ const styles = StyleSheet.create({
   },
   characterFallback: {
     fontSize: 42,
-  },
-  characterLabel: {
-    ...typography.bodyStrong,
-    color: colors.text,
-    textTransform: 'capitalize',
   },
   actionRow: {
     flexDirection: 'row',

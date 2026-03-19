@@ -63,6 +63,8 @@ describe('ProfileEditScreen', () => {
     expect(screen.getByTestId('profile-edit-email-input').props.value).toBe('test@gmail.com');
     expect(screen.getByTestId('profile-edit-character-option-2').props.accessibilityState.selected).toBe(true);
     expect(screen.getByTestId('profile-edit-save-button')).toBeDisabled();
+    expect(screen.queryByText('cat')).toBeNull();
+    expect(screen.queryByText('fox')).toBeNull();
   });
 
   it('checks nickname availability and resets the check when the nickname changes again', async () => {
