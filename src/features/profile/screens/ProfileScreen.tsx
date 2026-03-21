@@ -62,6 +62,21 @@ function DiaryMonthTimelineCard({
   );
 }
 
+function groupMonthlyDiaryCountByYear(items: DiaryMonthCountDTO[]) {
+  const sections = new Map<number, DiaryMonthCountDTO[]>();
+
+  items.forEach((item) => {
+    const sectionItems = sections.get(item.year) ?? [];
+    sectionItems.push(item);
+    sections.set(item.year, sectionItems);
+  });
+
+  return Array.from(sections.entries()).map(([year, months]) => ({
+    year,
+    months,
+  }));
+}
+
 function getNextFriendState(currentStatus: FriendshipStatus, action: 'send' | 'cancel' | 'accept' | 'reject' | 'delete') {
   switch (action) {
     case 'send':
@@ -111,6 +126,10 @@ export function ProfileScreen() {
       friendCount: friendCountOverride ?? baseProfile.friendCount,
     } satisfies UserProfileResponseDTO;
   }, [friendCountOverride, friendStatusOverride, profileQuery.data]);
+  const yearlyDiarySections = useMemo(
+    () => (profile ? groupMonthlyDiaryCountByYear(profile.monthlyDiaryCount) : []),
+    [profile],
+  );
 
   const isOwner = Boolean(profile && viewer && profile.userId === viewer.id);
 
@@ -374,14 +393,23 @@ export function ProfileScreen() {
             <Text style={styles.timelineSectionCaption}>월별 기록 달성도</Text>
           </View>
           {profile.monthlyDiaryCount.length > 0 ? (
-            <View style={styles.timelineBlock}>
-              <View style={styles.timelineRail} />
-              {profile.monthlyDiaryCount.map((item) => (
-                <DiaryMonthTimelineCard
-                  item={item}
-                  key={`${item.year}-${item.month}`}
-                  onPress={() => handleMonthPress(item)}
-                />
+            <View style={styles.timelineSectionList}>
+              {yearlyDiarySections.map((section) => (
+                <View key={section.year} style={styles.timelineYearSection}>
+                  <Text style={styles.timelineYearLabel} testID={`profile-year-section-${section.year}`}>
+                    {section.year}
+                  </Text>
+                  <View style={styles.timelineBlock}>
+                    <View style={styles.timelineRail} />
+                    {section.months.map((item) => (
+                      <DiaryMonthTimelineCard
+                        item={item}
+                        key={`${item.year}-${item.month}`}
+                        onPress={() => handleMonthPress(item)}
+                      />
+                    ))}
+                  </View>
+                </View>
               ))}
             </View>
           ) : (
@@ -480,6 +508,9 @@ const styles = StyleSheet.create({
   timelineSection: {
     gap: spacing.lg,
   },
+  timelineSectionList: {
+    gap: spacing.xl,
+  },
   timelineSectionHeader: {
     gap: spacing.xs,
   },
@@ -490,6 +521,13 @@ const styles = StyleSheet.create({
   timelineSectionCaption: {
     ...typography.caption,
     color: colors.mutedText,
+  },
+  timelineYearSection: {
+    gap: spacing.md,
+  },
+  timelineYearLabel: {
+    ...typography.bodyStrong,
+    color: colors.text,
   },
   timelineBlock: {
     position: 'relative',

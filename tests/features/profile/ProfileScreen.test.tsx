@@ -48,6 +48,26 @@ describe('ProfileScreen', () => {
     expect(routerMock.push).toHaveBeenCalledWith('/profile/user-1/calendar?date=2026-01-01');
   });
 
+  it('groups monthly diary achievement by year', async () => {
+    jest.spyOn(profileApi, 'getProfileInfo').mockResolvedValue({
+      ...buildLocalProfilePreviewMock('user-1'),
+      monthlyDiaryCount: [
+        { year: 2026, month: 3, count: 15, daysInMonth: 31 },
+        { year: 2026, month: 2, count: 11, daysInMonth: 28 },
+        { year: 2025, month: 12, count: 19, daysInMonth: 31 },
+      ],
+    });
+
+    const screen = renderWithProviders(<ProfileScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('profile-year-section-2026')).toBeTruthy());
+
+    expect(screen.getByTestId('profile-year-section-2025')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('profile-month-card-2025-12'));
+    expect(routerMock.push).toHaveBeenCalledWith('/profile/user-1/calendar?date=2025-12-01');
+  });
+
   it('shows login and signup actions for guests viewing another profile', async () => {
     mockedUseLocalSearchParams.mockReturnValue({ userId: 'user-4' });
     jest.spyOn(profileApi, 'getProfileInfo').mockResolvedValue({
