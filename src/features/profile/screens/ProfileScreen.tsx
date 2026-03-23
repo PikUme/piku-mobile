@@ -25,6 +25,7 @@ import {
 } from '@/lib/api/friends';
 import { showAlert, showConfirm } from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
+import type { ApiError } from '@/lib/api/errors';
 import { FriendshipStatus } from '@/types/friend';
 import type { DiaryMonthCountDTO, UserProfileResponseDTO } from '@/types/profile';
 import { colors, radius, spacing, typography } from '@/theme';
@@ -132,6 +133,13 @@ export function ProfileScreen() {
   );
 
   const isOwner = Boolean(profile && viewer && profile.userId === viewer.id);
+  const profileErrorStatus = (profileQuery.error as ApiError | null)?.status;
+
+  useEffect(() => {
+    if (!isLoggedIn && profileErrorStatus === 403) {
+      router.replace('/login');
+    }
+  }, [isLoggedIn, profileErrorStatus, router]);
 
   const updateFriendshipState = (action: 'send' | 'cancel' | 'accept' | 'reject' | 'delete') => {
     if (!profile) {

@@ -92,6 +92,22 @@ describe('ProfileScreen', () => {
     expect(routerMock.push).toHaveBeenCalledWith('/signup');
   });
 
+  it('redirects guests to login when profile preview returns 403', async () => {
+    mockedUseLocalSearchParams.mockReturnValue({ userId: 'user-4' });
+    const forbiddenError = Object.assign(new Error('접근할 수 없습니다.'), { status: 403 });
+    jest.spyOn(profileApi, 'getProfileInfo').mockRejectedValue(forbiddenError);
+    useAuthStore.setState({
+      ...useAuthStore.getState(),
+      isHydrated: true,
+      isLoggedIn: false,
+      user: null,
+    });
+
+    renderWithProviders(<ProfileScreen />);
+
+    await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/login'));
+  });
+
   it('sends a friend request and can cancel it from the profile action area', async () => {
     mockedUseLocalSearchParams.mockReturnValue({ userId: 'user-4' });
     jest.spyOn(profileApi, 'getProfileInfo').mockResolvedValue({
