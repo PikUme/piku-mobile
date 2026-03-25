@@ -38,6 +38,9 @@ interface DiaryCommentSheetProps {
 
 const ROOT_PAGE_SIZE = 10;
 const REPLY_PAGE_SIZE = 5;
+const hasExpandedPreviewCue = (content: string) => {
+  return content.includes('\n');
+};
 
 const createEmptyReplyState = (): CommentRepliesState => ({
   list: [],
@@ -646,18 +649,24 @@ export function DiaryCommentSheet({
                       {formatDiaryDate(diary.createdAt)}
                     </Text>
                   </View>
+                  {!isPreviewExpanded ? (
+                    <Text
+                      onTextLayout={(event) => {
+                        const nextCanExpand =
+                          event.nativeEvent.lines.length > 2 ||
+                          hasExpandedPreviewCue(diary.content);
+                        setCanExpandPreview((current) =>
+                          current === nextCanExpand ? current : nextCanExpand,
+                        );
+                      }}
+                      style={styles.previewMeasureText}
+                      testID={`${testIDPrefix}-preview-body-measure`}>
+                      {diary.content}
+                    </Text>
+                  ) : null}
                   <Text
+                    ellipsizeMode="tail"
                     numberOfLines={isPreviewExpanded ? undefined : 2}
-                    onTextLayout={(event) => {
-                      if (isPreviewExpanded) {
-                        return;
-                      }
-
-                      const nextCanExpand = event.nativeEvent.lines.length > 2;
-                      setCanExpandPreview((current) =>
-                        current === nextCanExpand ? current : nextCanExpand,
-                      );
-                    }}
                     style={styles.previewBody}
                     testID={`${testIDPrefix}-preview-body`}>
                     {diary.content}
@@ -732,6 +741,15 @@ const styles = StyleSheet.create({
   previewBody: {
     ...typography.body,
     color: colors.text,
+  },
+  previewMeasureText: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    opacity: 0,
+    ...typography.body,
+    color: 'transparent',
   },
   previewMoreLabel: {
     ...typography.caption,

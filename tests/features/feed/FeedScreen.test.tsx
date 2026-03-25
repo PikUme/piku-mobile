@@ -112,7 +112,7 @@ describe('FeedScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('feed-card-901')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-comment-button-901'));
-    fireEvent(screen.getByTestId('feed-comment-sheet-preview-body'), 'textLayout', {
+    fireEvent(screen.getByTestId('feed-comment-sheet-preview-body-measure'), 'textLayout', {
       nativeEvent: {
         lines: [{ text: '본문 일부' }, { text: '본문 둘째 줄' }, { text: '본문 셋째 줄' }],
       },

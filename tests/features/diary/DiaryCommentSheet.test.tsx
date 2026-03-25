@@ -87,10 +87,35 @@ describe('DiaryCommentSheet', () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByText('오늘의 장면을 기록한 상세 일기입니다. 스토리형과 딥링크형 화면에서 같은 데이터를 사용합니다. 필요할 때는 더 보기를 눌러 전체 내용을 확인할 수 있습니다.')).toBeTruthy(),
+      expect(screen.getByTestId('diary-comment-sheet-preview-body')).toBeTruthy(),
     );
 
     expect(screen.queryByTestId('diary-comment-sheet-detail-button')).toBeNull();
+  });
+
+  it('shows the preview more action when the diary body contains explicit line breaks', async () => {
+    const screen = renderWithProviders(
+      <DiaryCommentSheet
+        diary={{
+          ...buildLocalDiaryDetailMock(305),
+          content: '진짜 오늘 하루 너무 힘들었다\n피곤한데 회의는 하고 발표시키고 ㅠㅠ',
+        }}
+        onClose={jest.fn()}
+        visible
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('diary-comment-sheet-preview-body-measure')).toBeTruthy(),
+    );
+
+    fireEvent(screen.getByTestId('diary-comment-sheet-preview-body-measure'), 'textLayout', {
+      nativeEvent: {
+        lines: [{ text: '진짜 오늘 하루 너무 힘들었다' }, { text: '피곤한데 회의는 하고 발표시키고 ㅠㅠ' }],
+      },
+    });
+
+    expect(screen.getByTestId('diary-comment-sheet-preview-body-more')).toBeTruthy();
   });
 
   it('keeps reply pagination available after posting a reply to a partially loaded thread', async () => {
