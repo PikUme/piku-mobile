@@ -32,8 +32,9 @@ const getDiaryId = (value?: string | string[]) => {
 
 export function DiaryStoryScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[]; source?: string | string[] }>();
   const diaryId = getDiaryId(params.id);
+  const source = Array.isArray(params.source) ? params.source[0] : params.source;
   const user = useAuthStore((state) => state.user);
   const [commentCount, setCommentCount] = useState(0);
   const [isCommentSheetVisible, setIsCommentSheetVisible] = useState(false);
@@ -108,6 +109,7 @@ export function DiaryStoryScreen() {
 
   const diary = detailData;
   const isOwnDiary = user?.id === diary.userId;
+  const shouldHideCaption = source === 'feed';
 
   return (
     <>
@@ -155,9 +157,11 @@ export function DiaryStoryScreen() {
           />
         </View>
 
-        <View style={styles.captionSection}>
-          <DiaryDetailBody diary={diary} testIDPrefix="diary-story" />
-        </View>
+        {!shouldHideCaption ? (
+          <View style={styles.captionSection}>
+            <DiaryDetailBody diary={diary} testIDPrefix="diary-story" />
+          </View>
+        ) : null}
 
         <View
           style={styles.commentHandleContainer}

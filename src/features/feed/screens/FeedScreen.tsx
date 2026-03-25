@@ -156,7 +156,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     setSelectedPost(null);
     router.push({
       pathname: '/diary/story',
-      params: { id: String(post.diaryId) },
+      params: { id: String(post.diaryId), source: 'feed' },
     });
   };
 

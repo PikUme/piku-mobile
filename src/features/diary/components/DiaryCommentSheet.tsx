@@ -89,6 +89,8 @@ export function DiaryCommentSheet({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
+  const [canExpandPreview, setCanExpandPreview] = useState(false);
   const currentDiaryId = diary?.diaryId ?? null;
   const onCommentCountChangeRef = useRef(onCommentCountChange);
 
@@ -152,6 +154,8 @@ export function DiaryCommentSheet({
     setValue('');
     setReplyTo(null);
     setEditingComment(null);
+    setIsPreviewExpanded(false);
+    setCanExpandPreview(false);
     setIsLoadingComments(true);
 
     void (async () => {
@@ -642,9 +646,31 @@ export function DiaryCommentSheet({
                       {formatDiaryDate(diary.createdAt)}
                     </Text>
                   </View>
-                  <Text numberOfLines={2} style={styles.previewBody}>
+                  <Text
+                    numberOfLines={isPreviewExpanded ? undefined : 2}
+                    onTextLayout={(event) => {
+                      if (isPreviewExpanded) {
+                        return;
+                      }
+
+                      const nextCanExpand = event.nativeEvent.lines.length > 2;
+                      setCanExpandPreview((current) =>
+                        current === nextCanExpand ? current : nextCanExpand,
+                      );
+                    }}
+                    style={styles.previewBody}
+                    testID={`${testIDPrefix}-preview-body`}>
                     {diary.content}
                   </Text>
+                  {canExpandPreview && !isPreviewExpanded ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => setIsPreviewExpanded(true)}
+                      style={({ pressed }) => pressed && styles.pressed}
+                      testID={`${testIDPrefix}-preview-body-more`}>
+                      <Text style={styles.previewMoreLabel}>더보기</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
               {onOpenDetail ? (
@@ -706,6 +732,11 @@ const styles = StyleSheet.create({
   previewBody: {
     ...typography.body,
     color: colors.text,
+  },
+  previewMoreLabel: {
+    ...typography.caption,
+    color: colors.mutedText,
+    fontWeight: '700',
   },
   commentsScroll: {
     maxHeight: 340,

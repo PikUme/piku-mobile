@@ -73,7 +73,7 @@ describe('FeedScreen', () => {
 
     expect(routerMock.push).toHaveBeenCalledWith({
       pathname: '/diary/story',
-      params: { id: '301' },
+      params: { id: '301', source: 'feed' },
     });
   });
 
@@ -90,6 +90,41 @@ describe('FeedScreen', () => {
     expect(screen.getByTestId('feed-comment-sheet-body')).toBeTruthy();
     expect(screen.queryByTestId('feed-comment-sheet-preview-image')).toBeNull();
     expect(screen.queryByTestId('feed-comment-sheet-detail-button')).toBeNull();
+  });
+
+  it('shows the diary body and supports preview expansion inside the feed comment sheet', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [
+            buildFeedItem(901, {
+              content:
+                '이 본문은 충분히 길어서 댓글 시트 상단의 더 보기 버튼이 노출되어야 합니다. 사용자가 탭하면 전체 문자열을 확인할 수 있어야 합니다. 이 문장은 두 줄을 넘겨 더 보기 노출을 유도합니다.',
+            }),
+          ],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-901')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('feed-comment-button-901'));
+    fireEvent(screen.getByTestId('feed-comment-sheet-preview-body'), 'textLayout', {
+      nativeEvent: {
+        lines: [{ text: '본문 일부' }, { text: '본문 둘째 줄' }, { text: '본문 셋째 줄' }],
+      },
+    });
+
+    expect(screen.getByTestId('feed-comment-sheet-preview-body-more')).toBeTruthy();
+    expect(screen.getByTestId('feed-comment-sheet-preview-body').props.numberOfLines).toBe(2);
+
+    fireEvent.press(screen.getByTestId('feed-comment-sheet-preview-body-more'));
+
+    expect(screen.queryByTestId('feed-comment-sheet-preview-body-more')).toBeNull();
+    expect(screen.getByTestId('feed-comment-sheet-preview-body').props.numberOfLines).toBeUndefined();
   });
 
   it('does not refetch comments in a loop when the feed comment sheet is opened', async () => {
@@ -293,7 +328,7 @@ describe('FeedScreen', () => {
     );
   });
 
-  it('expands long content on demand', async () => {
+  it('expands long feed card content on demand', async () => {
     server.use(
       http.get(`${API_BASE_URL}/diary`, () =>
         HttpResponse.json({

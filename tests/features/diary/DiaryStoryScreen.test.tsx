@@ -8,8 +8,10 @@ import { useAuthStore } from '@/store/authStore';
 import { routerMock, useLocalSearchParams } from '../../mocks/expo-router';
 import { renderWithProviders } from '../../test-utils/renderWithProviders';
 
-const setDiaryParam = (id: string | string[]) => {
-  (useLocalSearchParams as jest.Mock).mockReturnValue({ id });
+const setDiaryParam = (id: string | string[], source?: string) => {
+  (useLocalSearchParams as jest.Mock).mockReturnValue(
+    source ? { id, source } : { id },
+  );
 };
 
 describe('DiaryStoryScreen', () => {
@@ -42,6 +44,7 @@ describe('DiaryStoryScreen', () => {
     );
 
     expect(screen.getByText(diary.nickname)).toBeTruthy();
+    expect(screen.getByTestId('diary-story-content')).toBeTruthy();
     expect(screen.queryByTestId('diary-story-more-button')).toBeNull();
 
     fireEvent.press(screen.getByTestId('diary-story-author-button'));
@@ -52,6 +55,18 @@ describe('DiaryStoryScreen', () => {
     await waitFor(() =>
       expect(screen.getByText('사진 분위기가 좋아요. 오늘 하루가 잘 전해집니다.')).toBeTruthy(),
     );
+  });
+
+  it('hides the story body when the screen is opened from feed', async () => {
+    setDiaryParam('305', 'feed');
+
+    const screen = renderWithProviders(<DiaryStoryScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('diary-story-author-button')).toBeTruthy(),
+    );
+
+    expect(screen.queryByTestId('diary-story-content')).toBeNull();
   });
 
   it('shows delete actions for own diary and deletes after confirmation', async () => {
