@@ -16,7 +16,6 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { DiaryCommentSheet } from '@/features/diary/components/DiaryCommentSheet';
-import { DiaryDetailBody } from '@/features/diary/components/DiaryDetailBody';
 import { DiaryImageCarousel } from '@/features/diary/components/DiaryImageCarousel';
 import { formatDiaryDate } from '@/features/diary/lib/detail';
 import { deleteDiary, getDiaryDetail } from '@/lib/api/diaries';
@@ -32,9 +31,8 @@ const getDiaryId = (value?: string | string[]) => {
 
 export function DiaryStoryScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string | string[]; source?: string | string[] }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const diaryId = getDiaryId(params.id);
-  const source = Array.isArray(params.source) ? params.source[0] : params.source;
   const user = useAuthStore((state) => state.user);
   const [commentCount, setCommentCount] = useState(0);
   const [isCommentSheetVisible, setIsCommentSheetVisible] = useState(false);
@@ -109,7 +107,6 @@ export function DiaryStoryScreen() {
 
   const diary = detailData;
   const isOwnDiary = user?.id === diary.userId;
-  const shouldHideCaption = source === 'feed';
 
   return (
     <>
@@ -156,12 +153,6 @@ export function DiaryStoryScreen() {
             testIDPrefix="diary-story"
           />
         </View>
-
-        {!shouldHideCaption ? (
-          <View style={styles.captionSection}>
-            <DiaryDetailBody diary={diary} testIDPrefix="diary-story" />
-          </View>
-        ) : null}
 
         <View
           style={styles.commentHandleContainer}
@@ -257,11 +248,6 @@ const styles = StyleSheet.create({
   mediaSection: {
     flex: 1,
     justifyContent: 'center',
-  },
-  captionSection: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
   },
   commentHandleContainer: {
     alignItems: 'center',
