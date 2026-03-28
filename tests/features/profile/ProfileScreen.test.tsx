@@ -17,6 +17,7 @@ describe('ProfileScreen', () => {
   beforeEach(() => {
     mockedUseLocalSearchParams.mockReturnValue({ userId: 'user-1' });
     routerMock.push.mockClear();
+    routerMock.back.mockClear();
     useAuthStore.setState({
       ...useAuthStore.getState(),
       isHydrated: true,
@@ -43,6 +44,9 @@ describe('ProfileScreen', () => {
 
     fireEvent.press(screen.getByTestId('profile-edit-button'));
     expect(routerMock.push).toHaveBeenCalledWith('/profile/edit');
+
+    fireEvent.press(screen.getByTestId('profile-back-button'));
+    expect(routerMock.back).toHaveBeenCalled();
 
     fireEvent.press(screen.getByTestId('profile-month-card-2026-1'));
     expect(routerMock.push).toHaveBeenCalledWith('/profile/user-1/calendar?date=2026-01-01');

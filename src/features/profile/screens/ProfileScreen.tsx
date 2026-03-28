@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 
 import { AppButton } from '@/components/ui/AppButton';
+import { AppHeader } from '@/components/ui/AppHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -367,6 +369,20 @@ export function ProfileScreen() {
   return (
     <ScreenContainer contentStyle={styles.screen}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContent}>
+          <AppHeader
+            leftSlot={
+              <Pressable
+                accessibilityLabel="뒤로가기"
+                onPress={() => router.back()}
+                style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+                testID="profile-back-button">
+                <Ionicons color={colors.text} name="chevron-back" size={20} />
+              </Pressable>
+            }
+            title="프로필"
+          />
+        </View>
         <View style={styles.heroBackground} />
         <View style={styles.avatarWrap}>
           <Avatar name={profile.nickname} size={128} source={profile.avatar || null} />
@@ -439,6 +455,17 @@ const styles = StyleSheet.create({
   scrollContent: {
     gap: spacing.xl,
     paddingBottom: spacing['4xl'],
+  },
+  headerContent: {
+    gap: spacing.sm,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
   },
   heroBackground: {
     height: 132,
@@ -600,5 +627,8 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: radius.pill,
     backgroundColor: colors.accent,
+  },
+  pressed: {
+    opacity: 0.82,
   },
 });
