@@ -4,6 +4,18 @@ import type { ApiError } from '@/lib/api/errors';
 import type { CursorPage, FeedDiary } from '@/types/diary';
 import { FriendshipStatus } from '@/types/friend';
 
+interface FeedLikeResponseRaw {
+  diaryId: number;
+  likeCount: number;
+  liked: boolean;
+}
+
+export interface FeedLikeResponse {
+  diaryId: number;
+  likeCount: number;
+  isLiked: boolean;
+}
+
 const LOCAL_FEED_ITEMS: FeedDiary[] = [
   {
     diaryId: 1001,
@@ -120,6 +132,28 @@ function getLocalFeedCursor(
   };
 }
 
+const toFeedLikeResponse = (raw: FeedLikeResponseRaw): FeedLikeResponse => ({
+  diaryId: raw.diaryId,
+  likeCount: raw.likeCount,
+  isLiked: raw.liked,
+});
+
+const updateLocalFeedLike = (diaryId: number, nextLiked: boolean): FeedLikeResponse => {
+  const target = LOCAL_FEED_ITEMS.find((item) => item.diaryId === diaryId);
+  if (!target) {
+    throw new Error('좋아요 대상을 찾을 수 없습니다.');
+  }
+
+  target.isLiked = nextLiked;
+  target.likeCount = Math.max(0, target.likeCount + (nextLiked ? 1 : -1));
+
+  return {
+    diaryId: target.diaryId,
+    likeCount: target.likeCount,
+    isLiked: target.isLiked,
+  };
+};
+
 export async function getFeedCursor(
   cursor?: string | null,
   limit = 20,
@@ -146,4 +180,22 @@ export async function getFeedCursor(
 
     throw error;
   }
+}
+
+export async function addFeedLike(diaryId: number): Promise<FeedLikeResponse> {
+  if (shouldUseLocalFeedMock) {
+    return updateLocalFeedLike(diaryId, true);
+  }
+
+  const response = await apiClient.post<FeedLikeResponseRaw>(`/likes/diary/${diaryId}`);
+  return toFeedLikeResponse(response.data);
+}
+
+export async function removeFeedLike(diaryId: number): Promise<FeedLikeResponse> {
+  if (shouldUseLocalFeedMock) {
+    return updateLocalFeedLike(diaryId, false);
+  }
+
+  const response = await apiClient.delete<FeedLikeResponseRaw>(`/likes/diary/${diaryId}`);
+  return toFeedLikeResponse(response.data);
 }

@@ -22,8 +22,10 @@ import { formatFeedDate } from '@/features/feed/lib/format';
 interface FeedCardProps {
   post: FeedDiary;
   isLoggedIn: boolean;
+  isLikePending?: boolean;
   viewerUserId?: string;
   onOpenDetail: (post: FeedDiary) => void;
+  onToggleLike: (post: FeedDiary) => void;
   onOpenComments: (post: FeedDiary) => void;
   onSendFriendRequest: (post: FeedDiary) => void;
   onCancelFriendRequest: (post: FeedDiary) => void;
@@ -33,8 +35,10 @@ interface FeedCardProps {
 export function FeedCard({
   post,
   isLoggedIn,
+  isLikePending = false,
   viewerUserId,
   onOpenDetail,
+  onToggleLike,
   onOpenComments,
   onSendFriendRequest,
   onCancelFriendRequest,
@@ -191,6 +195,26 @@ export function FeedCard({
       </View>
 
       <View style={styles.footer}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: post.isLiked }}
+          disabled={isLikePending}
+          onPress={() => onToggleLike(post)}
+          style={({ pressed }) => [
+            styles.commentButton,
+            isLikePending && styles.disabledButton,
+            pressed && styles.pressed,
+          ]}
+          testID={`feed-like-button-${post.diaryId}`}>
+          <Ionicons
+            color={post.isLiked ? colors.black : colors.text}
+            name={post.isLiked ? 'heart' : 'heart-outline'}
+            size={18}
+          />
+          <Text style={styles.commentLabel} testID={`feed-like-count-${post.diaryId}`}>
+            {post.likeCount}
+          </Text>
+        </Pressable>
         <Pressable
           accessibilityRole="button"
           onPress={() => onOpenComments(post)}
@@ -357,6 +381,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+  },
+  disabledButton: {
+    opacity: 0.45,
   },
   commentLabel: {
     ...typography.bodyStrong,

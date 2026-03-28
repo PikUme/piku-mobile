@@ -20,7 +20,7 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { FeedCard } from '@/features/feed/components/FeedCard';
 import { FeedCommentSheet } from '@/features/feed/components/FeedCommentSheet';
-import { getFeedCursor } from '@/lib/api/feed';
+import { addFeedLike, getFeedCursor, removeFeedLike } from '@/lib/api/feed';
 import { cancelFriendRequest, sendFriendRequest } from '@/lib/api/friends';
 import { showAlert } from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
@@ -60,6 +60,11 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   const [statusOverrides, setStatusOverrides] = useState<Record<number, FriendshipStatus>>(
     {},
   );
+  const [likeOverrides, setLikeOverrides] = useState<
+    Record<number, Pick<FeedDiary, 'isLiked' | 'likeCount'>>
+  >({});
+  const likePendingIdsRef = useRef(new Set<number>());
+  const [likePendingIds, setLikePendingIds] = useState<Record<number, boolean>>({});
   const [commentCountOverrides, setCommentCountOverrides] = useState<Record<number, number>>(
     {},
   );
@@ -94,9 +99,11 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
       rawItems.map((item) => ({
         ...item,
         friendStatus: statusOverrides[item.diaryId] ?? item.friendStatus,
+        likeCount: likeOverrides[item.diaryId]?.likeCount ?? item.likeCount,
+        isLiked: likeOverrides[item.diaryId]?.isLiked ?? item.isLiked,
         commentCount: commentCountOverrides[item.diaryId] ?? item.commentCount,
       })),
-    [commentCountOverrides, rawItems, statusOverrides],
+    [commentCountOverrides, likeOverrides, rawItems, statusOverrides],
   );
 
   const requestNextPage = () => {
@@ -162,6 +169,72 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
 
   const handleOpenComments = (post: FeedDiary) => {
     setSelectedPost(post);
+  };
+
+  const handleToggleLike = async (post: FeedDiary) => {
+    if (!isLoggedIn) {
+      router.push('/login');
+      return;
+    }
+
+    if (likePendingIdsRef.current.has(post.diaryId)) {
+      return;
+    }
+
+    const rollbackState = {
+      isLiked: post.isLiked,
+      likeCount: post.likeCount,
+    };
+    const optimisticState = {
+      isLiked: !post.isLiked,
+      likeCount: Math.max(0, post.likeCount + (post.isLiked ? -1 : 1)),
+    };
+
+    setLikeOverrides((current) => ({
+      ...current,
+      [post.diaryId]: optimisticState,
+    }));
+    likePendingIdsRef.current.add(post.diaryId);
+    setLikePendingIds((current) => ({
+      ...current,
+      [post.diaryId]: true,
+    }));
+
+    try {
+      const response = post.isLiked
+        ? await removeFeedLike(post.diaryId)
+        : await addFeedLike(post.diaryId);
+
+      setLikeOverrides((current) => ({
+        ...current,
+        [post.diaryId]: {
+          isLiked: response.isLiked,
+          likeCount: response.likeCount,
+        },
+      }));
+    } catch (requestError) {
+      setLikeOverrides((current) => ({
+        ...current,
+        [post.diaryId]: rollbackState,
+      }));
+
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : '좋아요 처리 중 오류가 발생했습니다.';
+      showAlert('좋아요 실패', message);
+    } finally {
+      likePendingIdsRef.current.delete(post.diaryId);
+      setLikePendingIds((current) => {
+        if (!current[post.diaryId]) {
+          return current;
+        }
+
+        const next = { ...current };
+        delete next[post.diaryId];
+        return next;
+      });
+    }
   };
 
   const handleCommentCountChange = useCallback((diaryId: number, count: number) => {
@@ -319,6 +392,7 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
         renderItem={({ item }) => (
           <FeedCard
             isLoggedIn={isLoggedIn}
+            isLikePending={Boolean(likePendingIds[item.diaryId])}
             onCancelFriendRequest={(post) => {
               void handleCancelFriendRequest(post);
             }}
@@ -327,6 +401,9 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
             onOpenFriendRequests={() => router.push('/friends')}
             onSendFriendRequest={(post) => {
               void handleSendFriendRequest(post);
+            }}
+            onToggleLike={(post) => {
+              void handleToggleLike(post);
             }}
             post={item}
             viewerUserId={user?.id}

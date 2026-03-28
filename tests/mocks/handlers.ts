@@ -256,6 +256,46 @@ export const handlers = [
       message: '친구 요청을 보냈습니다.',
     });
   }),
+  http.post(`${API_BASE_URL}/likes/diary/:diaryId`, ({ params }) => {
+    const diaryId = Number(params.diaryId);
+    const target = FEED_ITEMS.find((item) => item.diaryId === diaryId);
+
+    if (!target) {
+      return HttpResponse.json(
+        { status: 404, message: '일기를 찾을 수 없습니다.' },
+        { status: 404 },
+      );
+    }
+
+    target.isLiked = true;
+    target.likeCount += 1;
+
+    return HttpResponse.json({
+      diaryId,
+      likeCount: target.likeCount,
+      liked: target.isLiked,
+    });
+  }),
+  http.delete(`${API_BASE_URL}/likes/diary/:diaryId`, ({ params }) => {
+    const diaryId = Number(params.diaryId);
+    const target = FEED_ITEMS.find((item) => item.diaryId === diaryId);
+
+    if (!target) {
+      return HttpResponse.json(
+        { status: 404, message: '일기를 찾을 수 없습니다.' },
+        { status: 404 },
+      );
+    }
+
+    target.isLiked = false;
+    target.likeCount = Math.max(0, target.likeCount - 1);
+
+    return HttpResponse.json({
+      diaryId,
+      likeCount: target.likeCount,
+      liked: target.isLiked,
+    });
+  }),
   http.delete(`${API_BASE_URL}/relation/requests/:userId`, async () => {
     return HttpResponse.json({
       isAccepted: false,

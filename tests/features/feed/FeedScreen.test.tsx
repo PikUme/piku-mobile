@@ -20,6 +20,8 @@ const buildFeedItem = (
     nickname: string;
     userId: string;
     commentCount: number;
+    likeCount: number;
+    isLiked: boolean;
     friendStatus: FriendshipStatus;
     imgUrls: string[];
   }> = {},
@@ -36,8 +38,8 @@ const buildFeedItem = (
   userId: overrides.userId ?? `user-${diaryId}`,
   createdAt: '2026-03-08T01:00:00.000Z',
   commentCount: overrides.commentCount ?? 2,
-  likeCount: 0,
-  isLiked: false,
+  likeCount: overrides.likeCount ?? 0,
+  isLiked: overrides.isLiked ?? false,
   friendStatus: overrides.friendStatus ?? FriendshipStatus.NONE,
 });
 
@@ -75,6 +77,126 @@ describe('FeedScreen', () => {
       pathname: '/diary/story',
       params: { id: '301', source: 'feed' },
     });
+    expect(screen.getByTestId('feed-like-button-301')).toBeTruthy();
+    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(0);
+  });
+
+  it('optimistically toggles likes and applies the server response', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/likes/diary/:diaryId`, ({ params }) =>
+        HttpResponse.json({
+          diaryId: Number(params.diaryId),
+          likeCount: 3,
+          liked: true,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('feed-like-button-301'));
+
+    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+    expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
+      true,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-like-count-301').props.children).toBe(3),
+    );
+  });
+
+  it('rolls likes back when the request fails', async () => {
+    server.use(
+      http.post(`${API_BASE_URL}/likes/diary/:diaryId`, () =>
+        HttpResponse.json(
+          { status: 500, message: '좋아요 처리 중 오류가 발생했습니다.' },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('feed-like-button-301'));
+
+    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-like-count-301').props.children).toBe(0),
+    );
+    expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
+      false,
+    );
+  });
+
+  it('sends unlike requests for already-liked posts', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [buildFeedItem(777, { likeCount: 4, isLiked: true })],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+      http.delete(`${API_BASE_URL}/likes/diary/:diaryId`, ({ params }) =>
+        HttpResponse.json({
+          diaryId: Number(params.diaryId),
+          likeCount: 3,
+          liked: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('feed-like-button-777'));
+
+    expect(screen.getByTestId('feed-like-count-777').props.children).toBe(3);
+    expect(screen.getByTestId('feed-like-button-777').props.accessibilityState.selected).toBe(
+      false,
+    );
+  });
+
+  it('ignores repeated like taps while the same request is in flight', async () => {
+    let resolveRequest: () => void = () => {};
+    let requestCount = 0;
+
+    server.use(
+      http.post(`${API_BASE_URL}/likes/diary/:diaryId`, async ({ params }) => {
+        requestCount += 1;
+        await new Promise<void>((resolve) => {
+          resolveRequest = resolve;
+        });
+
+        return HttpResponse.json({
+          diaryId: Number(params.diaryId),
+          likeCount: 1,
+          liked: true,
+        });
+      }),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId('feed-like-button-301'));
+    fireEvent.press(screen.getByTestId('feed-like-button-301'));
+
+    await waitFor(() => expect(requestCount).toBe(1));
+    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+
+    resolveRequest();
+
+    await waitFor(() =>
+      expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
+        true,
+      ),
+    );
   });
 
   it('opens the comment sheet on mobile without showing the story detail action', async () => {
@@ -294,6 +416,22 @@ describe('FeedScreen', () => {
     expect(screen.getByTestId('feed-comment-sheet-login-button')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('feed-comment-sheet-login-button'));
+
+    expect(routerMock.push).toHaveBeenCalledWith('/login');
+  });
+
+  it('routes guests to login when they press like', async () => {
+    useAuthStore.setState({
+      ...useAuthStore.getState(),
+      isHydrated: true,
+      isLoggedIn: false,
+      user: null,
+    });
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
     expect(routerMock.push).toHaveBeenCalledWith('/login');
   });
