@@ -194,7 +194,7 @@ export function FeedCard({
         ) : null}
       </View>
 
-      <View style={styles.footer}>
+      <View style={styles.footer} testID={`feed-card-footer-${post.diaryId}`}>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: post.isLiked }}
@@ -212,7 +212,7 @@ export function FeedCard({
             size={18}
           />
           <Text style={styles.commentLabel} testID={`feed-like-count-${post.diaryId}`}>
-            {post.likeCount}
+            좋아요 {post.likeCount}
           </Text>
         </Pressable>
         <Pressable
@@ -373,6 +373,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
   },

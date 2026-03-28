@@ -78,7 +78,10 @@ describe('FeedScreen', () => {
       params: { id: '301', source: 'feed' },
     });
     expect(screen.getByTestId('feed-like-button-301')).toBeTruthy();
-    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(0);
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 0');
+    expect(screen.getByTestId('feed-card-footer-301').props.style).toEqual(
+      expect.objectContaining({ flexDirection: 'row', alignItems: 'center' }),
+    );
   });
 
   it('optimistically toggles likes and applies the server response', async () => {
@@ -97,13 +100,13 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
-    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
     expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
       true,
     );
 
     await waitFor(() =>
-      expect(screen.getByTestId('feed-like-count-301').props.children).toBe(3),
+      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 3'),
     );
   });
 
@@ -122,10 +125,10 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
-    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
 
     await waitFor(() =>
-      expect(screen.getByTestId('feed-like-count-301').props.children).toBe(0),
+      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 0'),
     );
     expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
       false,
@@ -155,7 +158,7 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-777'));
 
-    expect(screen.getByTestId('feed-like-count-777').props.children).toBe(3);
+    expect(screen.getByTestId('feed-like-count-777')).toHaveTextContent('좋아요 3');
     expect(screen.getByTestId('feed-like-button-777').props.accessibilityState.selected).toBe(
       false,
     );
@@ -188,7 +191,7 @@ describe('FeedScreen', () => {
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
     await waitFor(() => expect(requestCount).toBe(1));
-    expect(screen.getByTestId('feed-like-count-301').props.children).toBe(1);
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
 
     resolveRequest();
 
