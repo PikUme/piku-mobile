@@ -21,6 +21,26 @@ describe('normalizeApiError', () => {
     });
   });
 
+  it('falls back to status and message from the common response body', () => {
+    const error = normalizeApiError({
+      isAxiosError: true,
+      message: 'Request failed',
+      code: 'ERR_BAD_REQUEST',
+      response: {
+        data: {
+          status: 401,
+          message: '이메일 또는 비밀번호를 확인해 주세요.',
+        },
+      },
+    });
+
+    expect(error).toMatchObject({
+      message: '이메일 또는 비밀번호를 확인해 주세요.',
+      status: 401,
+      code: 'ERR_BAD_REQUEST',
+    });
+  });
+
   it('returns a generic error for unknown values', () => {
     const error = normalizeApiError('boom');
 

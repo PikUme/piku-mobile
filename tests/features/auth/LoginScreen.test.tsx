@@ -107,7 +107,7 @@ describe('LoginScreen', () => {
     server.use(
       http.post(`${API_BASE_URL}/auth/login`, async () =>
         HttpResponse.json(
-          { message: '이메일 또는 비밀번호를 확인해 주세요.' },
+          { status: 401, message: '이메일 또는 비밀번호를 확인해 주세요.' },
           { status: 401 },
         ),
       ),
