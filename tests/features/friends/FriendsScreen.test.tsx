@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 
 import { FriendsScreen } from '@/features/friends/screens/FriendsScreen';
@@ -170,6 +171,37 @@ describe('FriendsScreen', () => {
     await waitFor(() => expect(deleteSpy).toHaveBeenCalledWith('user-2'));
     await waitFor(() =>
       expect(screen.getByText('친구 목록이 비어 있습니다.')).toBeTruthy(),
+    );
+  });
+
+  it('keeps the avatar, profile block, and remove button on one row for friends', async () => {
+    jest.spyOn(friendsApi, 'getFriends').mockResolvedValue(
+      buildFriendPage([
+        {
+          userId: 'user-2',
+          nickname: '도리',
+          avatar: '',
+        },
+      ]),
+    );
+    jest.spyOn(friendsApi, 'getFriendRequests').mockResolvedValue(buildRequestPage([]));
+
+    const screen = renderWithProviders(<FriendsScreen />);
+
+    await waitFor(() => expect(screen.getByText('도리')).toBeTruthy());
+
+    expect(StyleSheet.flatten(screen.getByTestId('friends-row-user-2').props.style)).toEqual(
+      expect.objectContaining({
+        flexDirection: 'row',
+        alignItems: 'center',
+      }),
+    );
+    expect(
+      StyleSheet.flatten(screen.getByTestId('friends-profile-block-user-2').props.style),
+    ).toEqual(
+      expect.objectContaining({
+        flex: 1,
+      }),
     );
   });
 });

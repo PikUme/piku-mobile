@@ -300,24 +300,34 @@ export function FriendsScreen() {
         onEndReachedThreshold={0.45}
         renderItem={({ item }) => {
           const isActionLoading = actionTargetUserId === item.userId;
+          const isFriendTab = activeTab === 'friends';
 
           return (
-            <View style={styles.rowCard} testID={`friends-row-${item.userId}`}>
+            <View
+              style={[styles.rowCard, isFriendTab && styles.friendRowCard]}
+              testID={`friends-row-${item.userId}`}>
               <Pressable
                 accessibilityRole="button"
                 onPress={() => handleOpenProfile(item.userId)}
-                style={({ pressed }) => [styles.profileBlock, pressed && styles.profilePressed]}
+                style={({ pressed }) => [
+                  styles.profileBlock,
+                  isFriendTab && styles.friendProfileBlock,
+                  pressed && styles.profilePressed,
+                ]}
                 testID={`friends-open-profile-${item.userId}`}>
                 <Avatar name={item.nickname} size={44} source={item.avatar || null} />
-                <View style={styles.profileTextBlock}>
+                <View
+                  style={styles.profileTextBlock}
+                  testID={`friends-profile-block-${item.userId}`}>
                   <Text style={styles.nickname}>{item.nickname}</Text>
                   <Text style={styles.helperText}>
-                    {activeTab === 'friends' ? '프로필 보기' : '받은 친구 요청'}
+                    {isFriendTab ? '프로필 보기' : '받은 친구 요청'}
                   </Text>
                 </View>
               </Pressable>
-              <View style={styles.actionBlock}>
-                {activeTab === 'friends' ? (
+              <View
+                style={[styles.actionBlock, isFriendTab && styles.friendActionBlock]}>
+                {isFriendTab ? (
                   <AppButton
                     fullWidth={false}
                     label="친구 끊기"
@@ -410,10 +420,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     padding: spacing.lg,
   },
+  friendRowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   profileBlock: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  friendProfileBlock: {
+    flex: 1,
   },
   profilePressed: {
     opacity: 0.84,
@@ -434,6 +452,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  friendActionBlock: {
+    flexWrap: 'nowrap',
+    alignItems: 'center',
   },
   footerState: {
     paddingBottom: spacing.xl,
