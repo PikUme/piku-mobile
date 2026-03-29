@@ -1,4 +1,5 @@
 import React from 'react';
+import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 
 import { NotificationsScreen } from '@/features/notifications/screens/NotificationsScreen';
@@ -148,6 +149,59 @@ describe('NotificationsScreen', () => {
         },
       }),
     );
+  });
+
+  it('keeps a clicked unread notification read when the screen is mounted again with the same query cache', async () => {
+    const sharedQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+          gcTime: 0,
+          staleTime: Number.POSITIVE_INFINITY,
+        },
+        mutations: {
+          retry: false,
+        },
+      },
+    });
+
+    jest.spyOn(notificationsApi, 'markNotificationAsRead').mockResolvedValue();
+    jest.spyOn(notificationsApi, 'getNotifications').mockResolvedValue(
+      buildPage(
+        [
+          buildNotification(777, {
+            nickname: '모아',
+            type: 'COMMENT',
+            relatedDiaryId: 202603081,
+            diaryDate: '2026-03-08',
+            diaryUserId: 'user-3',
+            isRead: false,
+          }),
+        ],
+        0,
+        true,
+      ),
+    );
+
+    const firstScreen = renderWithProviders(<NotificationsScreen />, {
+      queryClient: sharedQueryClient,
+    });
+
+    await waitFor(() => expect(firstScreen.getByTestId('notification-row-777')).toBeTruthy());
+    fireEvent.press(firstScreen.getByTestId('notification-row-777'));
+
+    await waitFor(() =>
+      expect(firstScreen.queryByTestId('notification-unread-dot-777')).toBeNull(),
+    );
+
+    firstScreen.unmount();
+
+    const secondScreen = renderWithProviders(<NotificationsScreen />, {
+      queryClient: sharedQueryClient,
+    });
+
+    await waitFor(() => expect(secondScreen.getByTestId('notification-row-777')).toBeTruthy());
+    expect(secondScreen.queryByTestId('notification-unread-dot-777')).toBeNull();
   });
 
   it('opens a user profile when the notification does not have diary context', async () => {

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  InfiniteData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -78,6 +82,7 @@ function buildNotificationRoute(notification: AppNotification) {
 
 export function NotificationsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const setUnreadCount = useNotificationStore((state) => state.setUnreadCount);
   const [readIds, setReadIds] = useState<number[]>([]);
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
@@ -139,6 +144,32 @@ export function NotificationsScreen() {
     router.push(route);
   };
 
+  const persistReadStateToCache = (targetIds: number[]) => {
+    queryClient.setQueryData<InfiniteData<Page<AppNotification>, number>>(
+      ['notifications'],
+      (current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          pages: current.pages.map((page) => ({
+            ...page,
+            content: page.content.map((notification) =>
+              targetIds.includes(notification.id)
+                ? {
+                    ...notification,
+                    isRead: true,
+                  }
+                : notification,
+            ),
+          })),
+        };
+      },
+    );
+  };
+
   const handlePressNotification = async (notification: AppNotification) => {
     if (notification.isRead) {
       navigateFromNotification(notification);
@@ -150,6 +181,7 @@ export function NotificationsScreen() {
 
     try {
       await markNotificationAsRead(notification.id);
+      persistReadStateToCache([notification.id]);
       navigateFromNotification(notification);
     } catch (error) {
       setReadIds((current) => current.filter((id) => id !== notification.id));
@@ -190,6 +222,7 @@ export function NotificationsScreen() {
 
     try {
       await markAllNotificationsAsRead();
+      persistReadStateToCache(unreadIds);
     } catch (error) {
       setReadIds((current) => current.filter((id) => !unreadIds.includes(id)));
       showAlert(
