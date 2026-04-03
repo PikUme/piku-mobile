@@ -34,7 +34,6 @@ export function CommentComposer({
   if (!isLoggedIn) {
     return (
       <View style={styles.guestContainer} testID={`${testIDPrefix}-guest-actions`}>
-        <Text style={styles.guestMessage}>댓글을 작성하려면 로그인해주세요.</Text>
         <View style={styles.guestButtons}>
           <AppButton
             fullWidth={false}
@@ -104,11 +103,6 @@ const styles = StyleSheet.create({
   },
   guestContainer: {
     gap: spacing.sm,
-  },
-  guestMessage: {
-    ...typography.caption,
-    color: colors.mutedText,
-    textAlign: 'center',
   },
   guestButtons: {
     flexDirection: 'row',

@@ -205,6 +205,7 @@ describe('DiaryCommentSheet', () => {
     );
 
     expect(screen.getByTestId('diary-comment-sheet-login-button')).toBeTruthy();
+    expect(screen.queryByText('댓글을 작성하려면 로그인해주세요.')).toBeNull();
     fireEvent.press(screen.getByTestId('diary-comment-sheet-login-button'));
 
     expect(routerMock.push).toHaveBeenCalledWith('/login');
