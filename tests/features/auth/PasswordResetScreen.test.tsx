@@ -62,6 +62,11 @@ describe('PasswordResetScreen', () => {
     expect(screen.getByText('새 비밀번호 설정')).toBeTruthy();
     expect(screen.getByTestId('password-reset-step-dot-row')).toBeTruthy();
     expect(screen.getByTestId('password-reset-step-label-row')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-track')).toBeTruthy();
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-dot-row').props.style)
+        .justifyContent,
+    ).toBe('space-between');
     expect(
       StyleSheet.flatten(screen.getByTestId('password-reset-step-label-1').props.style)
         .textAlign,

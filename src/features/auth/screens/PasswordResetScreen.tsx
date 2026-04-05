@@ -47,12 +47,13 @@ function StepIndicator({
   return (
     <View style={styles.stepIndicator} testID="password-reset-step-indicator">
       <View style={styles.stepDotRow} testID="password-reset-step-dot-row">
-        {steps.map((item, index) => {
+        <View style={styles.stepTrack} testID="password-reset-step-track" />
+        {steps.map((item) => {
           const isActive = step === item.value;
           const isCompleted = step > item.value;
 
           return (
-            <View key={item.value} style={styles.stepDotSegment}>
+            <View key={item.value} style={styles.stepDotWrapper}>
               <View
                 style={[
                   styles.stepDot,
@@ -60,15 +61,6 @@ function StepIndicator({
                 ]}
                 testID={`password-reset-step-dot-${item.value}`}
               />
-              {index < steps.length - 1 ? (
-                <View
-                  style={[
-                    styles.stepConnector,
-                    step > item.value && styles.stepConnectorActive,
-                  ]}
-                  testID={`password-reset-step-connector-${item.value}`}
-                />
-              ) : null}
             </View>
           );
         })}
@@ -478,14 +470,23 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   stepDotRow: {
+    position: 'relative',
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    minHeight: 14,
   },
-  stepDotSegment: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  stepTrack: {
+    position: 'absolute',
+    left: 7,
+    right: 7,
+    top: 6,
+    height: 2,
+    backgroundColor: colors.border,
+  },
+  stepDotWrapper: {
+    zIndex: 1,
   },
   stepDot: {
     width: 14,
@@ -498,15 +499,6 @@ const styles = StyleSheet.create({
   stepDotActive: {
     backgroundColor: colors.text,
     borderColor: colors.text,
-  },
-  stepConnector: {
-    flex: 1,
-    height: 2,
-    marginLeft: spacing.xs,
-    backgroundColor: colors.border,
-  },
-  stepConnectorActive: {
-    backgroundColor: colors.text,
   },
   stepLabelRow: {
     flexDirection: 'row',
