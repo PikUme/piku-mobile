@@ -72,6 +72,7 @@ describe('NotificationsScreen', () => {
     const screen = renderWithProviders(<NotificationsScreen />);
 
     await waitFor(() => expect(screen.getByTestId('notification-row-501')).toBeTruthy());
+    expect(screen.queryByText('친구 활동과 기록 반응을 한곳에서 확인합니다.')).toBeNull();
     expect(screen.getByTestId('notification-thumbnail-501')).toBeTruthy();
     expect(useNotificationStore.getState().unreadCount).toBe(2);
     expect(screen.getByTestId('notifications-read-all-button')).toBeTruthy();

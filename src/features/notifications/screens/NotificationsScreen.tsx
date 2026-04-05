@@ -310,9 +310,6 @@ export function NotificationsScreen() {
               title="알림"
             />
             <View style={styles.headerActions}>
-              <Text style={styles.headerDescription}>
-                친구 활동과 기록 반응을 한곳에서 확인합니다.
-              </Text>
               {unreadNotifications.length > 0 ? (
                 <AppButton
                   fullWidth={false}
@@ -409,14 +406,9 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  headerDescription: {
-    ...typography.caption,
-    color: colors.mutedText,
-    flex: 1,
   },
   backButton: {
     width: 40,
