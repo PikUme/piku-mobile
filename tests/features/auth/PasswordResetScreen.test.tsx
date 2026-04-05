@@ -75,7 +75,7 @@ describe('PasswordResetScreen', () => {
     expect(
       StyleSheet.flatten(screen.getByTestId('password-reset-step-label-row').props.style)
         .paddingHorizontal,
-    ).toBe(spacing.xl);
+    ).toBeUndefined();
     expect(
       StyleSheet.flatten(screen.getByTestId('password-reset-step-label-1').props.style)
         .textAlign,

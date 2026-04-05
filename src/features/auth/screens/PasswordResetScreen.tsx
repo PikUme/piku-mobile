@@ -504,7 +504,6 @@ const styles = StyleSheet.create({
   stepLabelRow: {
     flexDirection: 'row',
     width: '100%',
-    paddingHorizontal: spacing.xl,
   },
   stepLabelSlot: {
     flex: 1,
