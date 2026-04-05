@@ -476,11 +476,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     minHeight: 14,
+    paddingHorizontal: spacing.xl,
   },
   stepTrack: {
     position: 'absolute',
-    left: 7,
-    right: 7,
+    left: spacing.xl + 7,
+    right: spacing.xl + 7,
     top: 6,
     height: 2,
     backgroundColor: colors.border,
@@ -503,6 +504,7 @@ const styles = StyleSheet.create({
   stepLabelRow: {
     flexDirection: 'row',
     width: '100%',
+    paddingHorizontal: spacing.xl,
   },
   stepLabelSlot: {
     flex: 1,

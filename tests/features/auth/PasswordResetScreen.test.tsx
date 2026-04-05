@@ -4,6 +4,7 @@ import { fireEvent, waitFor } from '@testing-library/react-native';
 import { http, HttpResponse } from 'msw';
 
 import { PasswordResetScreen } from '@/features/auth/screens/PasswordResetScreen';
+import { spacing } from '@/theme';
 import { renderWithProviders } from '../../test-utils/renderWithProviders';
 import { routerMock } from '../../mocks/expo-router';
 import { server } from '../../mocks/server';
@@ -67,6 +68,14 @@ describe('PasswordResetScreen', () => {
       StyleSheet.flatten(screen.getByTestId('password-reset-step-dot-row').props.style)
         .justifyContent,
     ).toBe('space-between');
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-dot-row').props.style)
+        .paddingHorizontal,
+    ).toBe(spacing.xl);
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-label-row').props.style)
+        .paddingHorizontal,
+    ).toBe(spacing.xl);
     expect(
       StyleSheet.flatten(screen.getByTestId('password-reset-step-label-1').props.style)
         .textAlign,
