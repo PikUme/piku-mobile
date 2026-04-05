@@ -38,19 +38,21 @@ function StepIndicator({
 }: {
   step: 1 | 2 | 3;
 }) {
+  const steps = [
+    { value: 1, label: '이메일 주소 입력' },
+    { value: 2, label: '인증코드 확인' },
+    { value: 3, label: '새 비밀번호 설정' },
+  ] as const;
+
   return (
     <View style={styles.stepIndicator} testID="password-reset-step-indicator">
-      {[
-        { value: 1, label: '이메일 주소 입력' },
-        { value: 2, label: '인증코드 확인' },
-        { value: 3, label: '새 비밀번호 설정' },
-      ].map((item, index) => {
-        const isActive = step === item.value;
-        const isCompleted = step > item.value;
+      <View style={styles.stepDotRow} testID="password-reset-step-dot-row">
+        {steps.map((item, index) => {
+          const isActive = step === item.value;
+          const isCompleted = step > item.value;
 
-        return (
-          <View key={item.value} style={styles.stepItem}>
-            <View style={styles.stepNodeRow}>
+          return (
+            <View key={item.value} style={styles.stepDotSegment}>
               <View
                 style={[
                   styles.stepDot,
@@ -58,7 +60,7 @@ function StepIndicator({
                 ]}
                 testID={`password-reset-step-dot-${item.value}`}
               />
-              {index < 2 ? (
+              {index < steps.length - 1 ? (
                 <View
                   style={[
                     styles.stepConnector,
@@ -68,17 +70,43 @@ function StepIndicator({
                 />
               ) : null}
             </View>
-            <Text
+          );
+        })}
+      </View>
+
+      <View style={styles.stepLabelRow} testID="password-reset-step-label-row">
+        {steps.map((item) => {
+          const isActive = step === item.value;
+          const isCompleted = step > item.value;
+
+          return (
+            <View
+              key={item.value}
               style={[
-                styles.stepLabel,
-                (isActive || isCompleted) && styles.stepLabelActive,
-              ]}
-              testID={`password-reset-step-label-${item.value}`}>
-              {item.label}
-            </Text>
-          </View>
-        );
-      })}
+                styles.stepLabelSlot,
+                item.value === 1
+                  ? styles.stepLabelSlotStart
+                  : item.value === 2
+                    ? styles.stepLabelSlotCenter
+                    : styles.stepLabelSlotEnd,
+              ]}>
+              <Text
+                style={[
+                  styles.stepLabel,
+                  item.value === 1
+                    ? styles.stepLabelStart
+                    : item.value === 2
+                      ? styles.stepLabelCenter
+                      : styles.stepLabelEnd,
+                  (isActive || isCompleted) && styles.stepLabelActive,
+                ]}
+                testID={`password-reset-step-label-${item.value}`}>
+                {item.label}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -446,22 +474,18 @@ export function PasswordResetScreen() {
 
 const styles = StyleSheet.create({
   stepIndicator: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
-  },
-  stepItem: {
-    flex: 1,
-    alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.md,
   },
-  stepNodeRow: {
-    width: '100%',
+  stepDotRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
+  },
+  stepDotSegment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   stepDot: {
     width: 14,
@@ -478,19 +502,44 @@ const styles = StyleSheet.create({
   stepConnector: {
     flex: 1,
     height: 2,
-    marginHorizontal: spacing.xs / 2,
+    marginLeft: spacing.xs,
     backgroundColor: colors.border,
   },
   stepConnectorActive: {
     backgroundColor: colors.text,
   },
+  stepLabelRow: {
+    flexDirection: 'row',
+    width: '100%',
+  },
+  stepLabelSlot: {
+    flex: 1,
+  },
+  stepLabelSlotStart: {
+    alignItems: 'flex-start',
+  },
+  stepLabelSlotCenter: {
+    alignItems: 'center',
+  },
+  stepLabelSlotEnd: {
+    alignItems: 'flex-end',
+  },
   stepLabel: {
     ...typography.caption,
     color: colors.mutedText,
     fontWeight: '600',
-    textAlign: 'center',
+    maxWidth: '100%',
     lineHeight: 18,
     minHeight: 36,
+  },
+  stepLabelStart: {
+    textAlign: 'left',
+  },
+  stepLabelCenter: {
+    textAlign: 'center',
+  },
+  stepLabelEnd: {
+    textAlign: 'right',
   },
   stepLabelActive: {
     color: colors.text,

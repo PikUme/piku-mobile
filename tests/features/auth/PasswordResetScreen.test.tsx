@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, waitFor } from '@testing-library/react-native';
 import { http, HttpResponse } from 'msw';
 
@@ -59,6 +60,20 @@ describe('PasswordResetScreen', () => {
     expect(screen.getByText('이메일 주소 입력')).toBeTruthy();
     expect(screen.getByText('인증코드 확인')).toBeTruthy();
     expect(screen.getByText('새 비밀번호 설정')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-dot-row')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-label-row')).toBeTruthy();
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-label-1').props.style)
+        .textAlign,
+    ).toBe('left');
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-label-2').props.style)
+        .textAlign,
+    ).toBe('center');
+    expect(
+      StyleSheet.flatten(screen.getByTestId('password-reset-step-label-3').props.style)
+        .textAlign,
+    ).toBe('right');
     expect(
       screen.getByTestId('password-reset-send-verification-button'),
     ).toBeTruthy();
