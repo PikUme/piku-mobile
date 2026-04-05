@@ -41,9 +41,9 @@ function StepIndicator({
   return (
     <View style={styles.stepIndicator} testID="password-reset-step-indicator">
       {[
-        { value: 1, label: '이메일' },
-        { value: 2, label: '인증' },
-        { value: 3, label: '재설정' },
+        { value: 1, label: '이메일 주소 입력' },
+        { value: 2, label: '인증코드 확인' },
+        { value: 3, label: '새 비밀번호 설정' },
       ].map((item, index) => {
         const isActive = step === item.value;
         const isCompleted = step > item.value;
@@ -449,12 +449,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   stepItem: {
     flex: 1,
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   stepNodeRow: {
     width: '100%',
@@ -462,8 +464,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stepDot: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
@@ -476,7 +478,7 @@ const styles = StyleSheet.create({
   stepConnector: {
     flex: 1,
     height: 2,
-    marginHorizontal: spacing.xs,
+    marginHorizontal: spacing.xs / 2,
     backgroundColor: colors.border,
   },
   stepConnectorActive: {
@@ -486,6 +488,9 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.mutedText,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
+    minHeight: 36,
   },
   stepLabelActive: {
     color: colors.text,

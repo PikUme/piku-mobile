@@ -56,7 +56,9 @@ describe('PasswordResetScreen', () => {
     expect(screen.getByTestId('password-reset-step-label-1')).toBeTruthy();
     expect(screen.getByTestId('password-reset-step-label-2')).toBeTruthy();
     expect(screen.getByTestId('password-reset-step-label-3')).toBeTruthy();
-    expect(screen.queryByText('1. 이메일 입력')).toBeNull();
+    expect(screen.getByText('이메일 주소 입력')).toBeTruthy();
+    expect(screen.getByText('인증코드 확인')).toBeTruthy();
+    expect(screen.getByText('새 비밀번호 설정')).toBeTruthy();
     expect(
       screen.getByTestId('password-reset-send-verification-button'),
     ).toBeTruthy();
