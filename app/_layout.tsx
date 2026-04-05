@@ -18,7 +18,7 @@ export default function RootLayout() {
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const router = useRouter();
-  const segments = useSegments();
+  const segments = useSegments() as readonly string[];
 
   const firstSegment = segments[0];
   const secondSegment = segments[1];

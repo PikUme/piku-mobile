@@ -50,4 +50,10 @@ describe('RootLayout auth guard', () => {
 
     await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/'));
   });
+
+  it('handles single segment routes without crashing', () => {
+    mockedUseSegments.mockReturnValue(['notifications']);
+
+    expect(() => render(<RootLayout />)).not.toThrow();
+  });
 });
