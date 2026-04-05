@@ -39,23 +39,42 @@ function StepIndicator({
   step: 1 | 2 | 3;
 }) {
   return (
-    <View style={styles.stepRow}>
+    <View style={styles.stepIndicator} testID="password-reset-step-indicator">
       {[
-        { value: 1, label: '이메일 입력' },
-        { value: 2, label: '인증코드 확인' },
-        { value: 3, label: '새 비밀번호 설정' },
-      ].map((item) => {
+        { value: 1, label: '이메일' },
+        { value: 2, label: '인증' },
+        { value: 3, label: '재설정' },
+      ].map((item, index) => {
         const isActive = step === item.value;
+        const isCompleted = step > item.value;
+
         return (
-          <View
-            key={item.value}
-            style={[styles.stepChip, isActive && styles.stepChipActive]}>
+          <View key={item.value} style={styles.stepItem}>
+            <View style={styles.stepNodeRow}>
+              <View
+                style={[
+                  styles.stepDot,
+                  (isActive || isCompleted) && styles.stepDotActive,
+                ]}
+                testID={`password-reset-step-dot-${item.value}`}
+              />
+              {index < 2 ? (
+                <View
+                  style={[
+                    styles.stepConnector,
+                    step > item.value && styles.stepConnectorActive,
+                  ]}
+                  testID={`password-reset-step-connector-${item.value}`}
+                />
+              ) : null}
+            </View>
             <Text
               style={[
-                styles.stepChipText,
-                isActive && styles.stepChipTextActive,
-              ]}>
-              {item.value}. {item.label}
+                styles.stepLabel,
+                (isActive || isCompleted) && styles.stepLabelActive,
+              ]}
+              testID={`password-reset-step-label-${item.value}`}>
+              {item.label}
             </Text>
           </View>
         );
@@ -426,27 +445,50 @@ export function PasswordResetScreen() {
 }
 
 const styles = StyleSheet.create({
-  stepRow: {
+  stepIndicator: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
   },
-  stepChip: {
+  stepItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  stepNodeRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepDot: {
+    width: 12,
+    height: 12,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  stepChipActive: {
-    backgroundColor: colors.primarySoft,
+  stepDotActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
   },
-  stepChipText: {
+  stepConnector: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: spacing.xs,
+    backgroundColor: colors.border,
+  },
+  stepConnectorActive: {
+    backgroundColor: colors.text,
+  },
+  stepLabel: {
     ...typography.caption,
     color: colors.mutedText,
     fontWeight: '600',
   },
-  stepChipTextActive: {
-    color: colors.primary,
+  stepLabelActive: {
+    color: colors.text,
   },
   section: {
     gap: spacing.lg,

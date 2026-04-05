@@ -52,6 +52,11 @@ describe('PasswordResetScreen', () => {
     await waitFor(() =>
       expect(screen.getByTestId('password-reset-email-input')).toBeTruthy(),
     );
+    expect(screen.getByTestId('password-reset-step-indicator')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-label-1')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-label-2')).toBeTruthy();
+    expect(screen.getByTestId('password-reset-step-label-3')).toBeTruthy();
+    expect(screen.queryByText('1. 이메일 입력')).toBeNull();
     expect(
       screen.getByTestId('password-reset-send-verification-button'),
     ).toBeTruthy();
