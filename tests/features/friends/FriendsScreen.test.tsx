@@ -66,6 +66,7 @@ describe('FriendsScreen', () => {
     const screen = renderWithProviders(<FriendsScreen />);
 
     await waitFor(() => expect(screen.getByText('도리')).toBeTruthy());
+    expect(screen.queryByText('친구 목록과 받은 친구 요청을 관리합니다.')).toBeNull();
     expect(screen.getByTestId('friends-requests-badge')).toBeTruthy();
 
     fireEvent(screen.getByTestId('friends-list'), 'onEndReached');

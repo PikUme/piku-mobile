@@ -155,10 +155,7 @@ export function FriendsScreen() {
 
   const headerComponent = (
     <View style={styles.headerContent}>
-      <AppTopBar
-        subtitle="친구 목록과 받은 친구 요청을 관리합니다."
-        title="친구"
-      />
+      <AppTopBar title="친구" />
       <View style={styles.tabRow}>
         <Pressable
           accessibilityRole="button"
