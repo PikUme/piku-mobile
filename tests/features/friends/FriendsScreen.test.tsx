@@ -66,6 +66,8 @@ describe('FriendsScreen', () => {
     const screen = renderWithProviders(<FriendsScreen />);
 
     await waitFor(() => expect(screen.getByText('도리')).toBeTruthy());
+    expect(screen.getByTestId('shell-brand-title').props.children).toBe('PikUme');
+    expect(screen.queryByTestId('shell-user-name')).toBeNull();
     expect(screen.queryByText('친구 목록과 받은 친구 요청을 관리합니다.')).toBeNull();
     expect(screen.getByTestId('friends-requests-badge')).toBeTruthy();
 

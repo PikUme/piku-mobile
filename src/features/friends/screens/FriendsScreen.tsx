@@ -155,7 +155,7 @@ export function FriendsScreen() {
 
   const headerComponent = (
     <View style={styles.headerContent}>
-      <AppTopBar title="친구" />
+      <AppTopBar compact title="PikUme" variant="brand" />
       <View style={styles.tabRow}>
         <Pressable
           accessibilityRole="button"
