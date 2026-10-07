@@ -1,5 +1,9 @@
 import React from 'react';
-import { fireEvent, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import * as SecureStore from 'expo-secure-store';
+
+import { AppBottomTabBar } from '@/components/shell/AppBottomTabBar';
+import { getAuthSession } from '@/lib/auth/sessionStorage';
 
 import { ProfileEditScreen } from '@/features/profile/screens/ProfileEditScreen';
 import * as charactersApi from '@/lib/api/characters';
@@ -10,6 +14,11 @@ import { FriendshipStatus } from '@/types/friend';
 import type { FixedCharacter } from '@/types/character';
 import { routerMock } from '../../mocks/expo-router';
 import { renderWithProviders } from '../../test-utils/renderWithProviders';
+
+jest.mock('../../../assets/bottom-nav/fox.webp', () => 101);
+jest.mock('../../../assets/bottom-nav/pencil.webp', () => 102);
+jest.mock('../../../assets/bottom-nav/bread.webp', () => 103);
+jest.mock('../../../assets/bottom-nav/cat.webp', () => 104);
 
 const CHARACTER_FIXTURES: FixedCharacter[] = [
   { id: 1, type: 'fox', displayImageUrl: 'https://cdn.example.com/fox.png' },
@@ -32,6 +41,7 @@ const buildProfile = () => ({
 
 describe('ProfileEditScreen', () => {
   beforeEach(() => {
+    (SecureStore as typeof SecureStore & { __reset: () => void }).__reset();
     routerMock.push.mockClear();
     routerMock.replace.mockClear();
     routerMock.back.mockClear();
@@ -138,5 +148,96 @@ describe('ProfileEditScreen', () => {
     await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/profile/user-1'));
     expect(useAuthStore.getState().user?.nickname).toBe('pikume');
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  async function seedAvatarProfile() {
+    const characters: FixedCharacter[] = [
+      { id: 1, type: 'fox', displayImageUrl: 'https://cdn.example.com/base_image_1.png' },
+      { id: 2, type: 'pencil', displayImageUrl: 'https://cdn.example.com/base_image_2.png' },
+      { id: 3, type: 'bread', displayImageUrl: 'https://cdn.example.com/base_image_3.webp' },
+      { id: 4, type: 'cat', displayImageUrl: 'https://cdn.example.com/base_image_4.png' },
+    ];
+    await useAuthStore.getState().login({
+      user: {
+        id: 'user-1', email: 'test@gmail.com', nickname: 'test',
+        avatar: characters[0].displayImageUrl,
+        avatarPath: characters[0].displayImageUrl,
+        avatarUrl: 'https://old.example.com/base_image_1.webp',
+      },
+      accessToken: 'test-access',
+    });
+    jest.mocked(profileApi.getProfileInfo).mockResolvedValue({ ...buildProfile(), avatar: characters[0].displayImageUrl });
+    jest.mocked(charactersApi.getFixedCharacters).mockResolvedValue(characters);
+  }
+
+  it.each([
+    ['server avatar first', 'https://cdn.example.com/base_image_4.webp', 'https://cdn.example.com/base_image_4.webp'],
+    ['selected image fallback', undefined, 'https://cdn.example.com/base_image_4.png'],
+  ])('synchronizes all avatar fields and restores cat across tab return and restart: %s', async (_label, responseAvatar, expectedAvatar) => {
+    await seedAvatarProfile();
+    jest.spyOn(profileApi, 'updateUserProfile').mockResolvedValue({ success: true, message: 'saved', avatar: responseAvatar });
+    const screen = renderWithProviders(<ProfileEditScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-edit-character-option-1').props.accessibilityState.selected).toBe(true));
+    fireEvent.press(screen.getByTestId('profile-edit-character-option-4'));
+    fireEvent.press(screen.getByTestId('profile-edit-save-button'));
+    await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/profile/user-1'));
+    const expectedFields = { avatar: expectedAvatar, avatarPath: expectedAvatar, avatarUrl: expectedAvatar };
+    expect(useAuthStore.getState().user).toMatchObject(expectedFields);
+    expect((await getAuthSession())?.user).toMatchObject(expectedFields);
+    screen.rerender(<AppBottomTabBar />);
+    expect(screen.getByTestId('bottom-tab-character', { includeHiddenElements: true }).props.source)
+      .toEqual(require('../../../assets/bottom-nav/cat.webp'));
+    screen.unmount();
+    useAuthStore.setState({ isHydrated: false, isLoggedIn: false, user: null });
+    const restored = renderWithProviders(<AppBottomTabBar />);
+    await act(async () => useAuthStore.getState().hydrateSession());
+    expect(useAuthStore.getState().user).toMatchObject(expectedFields);
+    expect(restored.getByTestId('bottom-tab-character', { includeHiddenElements: true }).props.source)
+      .toEqual(require('../../../assets/bottom-nav/cat.webp'));
+  });
+
+  it('uses the response avatar even when it differs from the selected character image', async () => {
+    await seedAvatarProfile();
+    const avatar = 'https://cdn.example.com/base_image_3.webp';
+    jest.spyOn(profileApi, 'updateUserProfile').mockResolvedValue({ success: true, message: 'saved', avatar });
+    const screen = renderWithProviders(<ProfileEditScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-edit-character-option-1').props.accessibilityState.selected).toBe(true));
+    fireEvent.press(screen.getByTestId('profile-edit-character-option-4'));
+    fireEvent.press(screen.getByTestId('profile-edit-save-button'));
+    await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/profile/user-1'));
+    expect(useAuthStore.getState().user).toMatchObject({ avatar, avatarPath: avatar, avatarUrl: avatar });
+  });
+
+  it('preserves all existing avatar fields for a nickname-only save without a response image', async () => {
+    await seedAvatarProfile();
+    const previousUser = useAuthStore.getState().user!;
+    jest.spyOn(profileApi, 'checkNicknameAvailability').mockResolvedValue({ success: true, message: 'available' });
+    jest.spyOn(profileApi, 'updateUserProfile').mockResolvedValue({ success: true, message: 'saved', newNickname: 'pikume' });
+    const screen = renderWithProviders(<ProfileEditScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-edit-nickname-input').props.value).toBe('test'));
+    fireEvent.changeText(screen.getByTestId('profile-edit-nickname-input'), 'pikume');
+    fireEvent.press(screen.getByTestId('profile-edit-check-nickname-button'));
+    await waitFor(() => expect(screen.getByTestId('profile-edit-save-button')).not.toBeDisabled());
+    fireEvent.press(screen.getByTestId('profile-edit-save-button'));
+    await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith('/profile/user-1'));
+    expect(useAuthStore.getState().user).toEqual({ ...previousUser, nickname: 'pikume' });
+    expect((await getAuthSession())?.user).toEqual({ ...previousUser, nickname: 'pikume' });
+  });
+
+  it('does not publish the selected character before saving or after a failed save', async () => {
+    await seedAvatarProfile();
+    const previousUser = useAuthStore.getState().user;
+    const previousSession = await getAuthSession();
+    const alert = jest.spyOn(feedback, 'showAlert');
+    jest.spyOn(profileApi, 'updateUserProfile').mockRejectedValue(new Error('save failed'));
+    const screen = renderWithProviders(<ProfileEditScreen />);
+    await waitFor(() => expect(screen.getByTestId('profile-edit-character-option-1').props.accessibilityState.selected).toBe(true));
+    fireEvent.press(screen.getByTestId('profile-edit-character-option-4'));
+    expect(useAuthStore.getState().user).toEqual(previousUser);
+    fireEvent.press(screen.getByTestId('profile-edit-save-button'));
+    await waitFor(() => expect(alert).toHaveBeenCalledWith('프로필 저장 실패', 'save failed'));
+    expect(useAuthStore.getState().user).toEqual(previousUser);
+    expect(await getAuthSession()).toEqual(previousSession);
+    expect(routerMock.replace).not.toHaveBeenCalled();
   });
 });

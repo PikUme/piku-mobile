@@ -222,12 +222,15 @@ export function ProfileEditScreen() {
     setIsSaving(true);
     try {
       const response = await updateUserProfile(payload);
+      const nextAvatar =
+        response.avatar ||
+        (isCharacterChanged ? selectedCharacter?.displayImageUrl : undefined);
       const nextUser = {
         ...user,
         nickname: response.newNickname ?? payload.newNickname ?? user.nickname,
-        avatar:
-          response.avatar ??
-          (isCharacterChanged ? selectedCharacter?.displayImageUrl ?? user.avatar : user.avatar),
+        ...(nextAvatar
+          ? { avatar: nextAvatar, avatarPath: nextAvatar, avatarUrl: nextAvatar }
+          : {}),
       };
 
       await setUser(nextUser);

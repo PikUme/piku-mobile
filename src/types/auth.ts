@@ -4,6 +4,7 @@ export interface AuthUser {
   nickname: string;
   avatar?: string;
   avatarUrl?: string;
+  avatarPath?: string;
 }
 
 export interface AuthSession {
