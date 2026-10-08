@@ -91,7 +91,7 @@ describe('HomeScreen', () => {
 
     await moveToMonth(screen, targetDate);
     await waitFor(() =>
-      expect(screen.getByLabelText('test 2026-02-08 기록 있음')).toBeTruthy(),
+      expect(screen.getByLabelText(`test ${diary.date} 기록 있음`)).toBeTruthy(),
     );
     fireEvent.press(screen.getByTestId('home-calendar-current-day-8'));
 
