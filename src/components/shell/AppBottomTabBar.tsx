@@ -1,35 +1,48 @@
-import { useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import {
+  type ColorValue,
+  Image,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
-  Text,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import {
+  BottomNavIcon,
+  type BottomNavIconName,
+} from '@/components/shell/BottomNavIcon';
+import { BottomNavSurface } from '@/components/shell/BottomNavSurface';
+import { getBottomNavCharacterImage } from '@/components/shell/bottomNavCharacter';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ListItemCard } from '@/components/ui/ListItemCard';
 import { logout as requestLogout } from '@/lib/api/auth';
 import { showConfirm } from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
-import { colors, spacing, typography } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 interface TabItem {
-  key: string;
+  key: BottomNavIconName;
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
   isActive: boolean;
   onPress: () => void;
-  testID: string;
 }
 
-const ACTIVE_COLOR = colors.black;
-const INACTIVE_COLOR = '#9ca3af';
+interface AppBottomTabBarProps {
+  backgroundColor?: ColorValue;
+}
 
-export function AppBottomTabBar() {
+const ACTIVE_COLOR = '#FF5A00';
+const INACTIVE_COLOR = '#9CA3AF';
+const MORE_INACTIVE_COLOR = '#94A3B8';
+
+export function AppBottomTabBar({
+  backgroundColor = colors.background,
+}: AppBottomTabBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -38,16 +51,33 @@ export function AppBottomTabBar() {
   const user = useAuthStore((store) => store.user);
   const localLogout = useAuthStore((store) => store.logout);
   const [isMoreSheetVisible, setIsMoreSheetVisible] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(() =>
+    Keyboard.isVisible(),
+  );
 
-  const diaryLabel = width < 500 ? '일기' : '오늘의 일기';
-
-  const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/';
+  useEffect(() => {
+    const show = () => setIsKeyboardVisible(true);
+    const hide = () => setIsKeyboardVisible(false);
+    const subscriptions = [
+      Keyboard.addListener('keyboardDidShow', show),
+      Keyboard.addListener('keyboardDidHide', hide),
+    ];
+    if (Platform.OS === 'ios') {
+      subscriptions.push(Keyboard.addListener('keyboardWillShow', show));
     }
+    return () => subscriptions.forEach((subscription) => subscription.remove());
+  }, []);
 
-    return pathname.startsWith(href);
-  };
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setIsMoreSheetVisible(false);
+    }
+  }, [isLoggedIn]);
+
+  const isActive = (href: string) =>
+    href === '/'
+      ? pathname === '/'
+      : pathname === href || pathname.startsWith(`${href}/`);
 
   const handleLogout = () => {
     setIsMoreSheetVisible(false);
@@ -69,141 +99,138 @@ export function AppBottomTabBar() {
     );
   };
 
-  const items: TabItem[] = !isLoggedIn
+  const home: TabItem = {
+    key: 'home',
+    label: '홈',
+    isActive: isActive('/'),
+    onPress: () => router.push('/'),
+  };
+  const search: TabItem = {
+    key: 'search',
+    label: '검색',
+    isActive: isActive('/search'),
+    onPress: () => router.push('/search'),
+  };
+  const leftItems: TabItem[] = isLoggedIn
     ? [
-        {
-          key: 'home',
-          label: '홈',
-          icon: isActive('/') ? 'home' : 'home-outline',
-          isActive: isActive('/'),
-          onPress: () => router.push('/'),
-          testID: 'bottom-tab-home',
-        },
+        home,
         {
           key: 'feed',
           label: '피드',
-          icon: isActive('/feed') ? 'compass' : 'compass-outline',
           isActive: isActive('/feed'),
           onPress: () => router.push('/feed'),
-          testID: 'bottom-tab-feed',
-        },
-        {
-          key: 'search',
-          label: '검색',
-          icon: isActive('/search') ? 'search' : 'search-outline',
-          isActive: isActive('/search'),
-          onPress: () => router.push('/search'),
-          testID: 'bottom-tab-search',
-        },
-        {
-          key: 'login',
-          label: '로그인',
-          icon: 'log-in-outline',
-          isActive: pathname === '/login',
-          onPress: () => router.push('/login'),
-          testID: 'bottom-tab-login',
         },
       ]
-    : [
-        {
-          key: 'home',
-          label: '홈',
-          icon: isActive('/') ? 'home' : 'home-outline',
-          isActive: isActive('/'),
-          onPress: () => router.push('/'),
-          testID: 'bottom-tab-home',
-        },
-        {
-          key: 'feed',
-          label: '피드',
-          icon: isActive('/feed') ? 'compass' : 'compass-outline',
-          isActive: isActive('/feed'),
-          onPress: () => router.push('/feed'),
-          testID: 'bottom-tab-feed',
-        },
-        {
-          key: 'search',
-          label: '검색',
-          icon: isActive('/search') ? 'search' : 'search-outline',
-          isActive: isActive('/search'),
-          onPress: () => router.push('/search'),
-          testID: 'bottom-tab-search',
-        },
-        {
-          key: 'compose',
-          label: diaryLabel,
-          icon: isActive('/compose') ? 'create' : 'create-outline',
-          isActive: isActive('/compose'),
-          onPress: () => router.push('/compose'),
-          testID: 'bottom-tab-compose',
-        },
-        {
-          key: 'friends',
-          label: '친구',
-          icon: isActive('/friends') ? 'people' : 'people-outline',
-          isActive: isActive('/friends'),
-          onPress: () => router.push('/friends'),
-          testID: 'bottom-tab-friends',
-        },
+    : [home];
+  const rightItems: TabItem[] = isLoggedIn
+    ? [
+        search,
         {
           key: 'more',
           label: '더보기',
-          icon:
-            pathname.startsWith('/profile') ||
-            pathname.startsWith('/settings') ||
-            pathname.startsWith('/feedback')
-              ? 'menu'
-              : 'menu-outline',
-          isActive:
-            pathname.startsWith('/profile') ||
-            pathname.startsWith('/settings') ||
-            pathname.startsWith('/feedback'),
+          isActive: ['/profile', '/settings', '/feedback', '/friends'].some(
+            isActive,
+          ),
           onPress: () => setIsMoreSheetVisible(true),
-          testID: 'bottom-tab-more',
         },
-      ];
+      ]
+    : [search];
+  const sideWidth = width / 2 - 48;
+  const height = 84 + insets.bottom;
+  const characterImage = getBottomNavCharacterImage(
+    isLoggedIn
+      ? user?.avatarPath || user?.avatarUrl || user?.avatar
+      : undefined,
+  );
+
+  const renderItem = (item: TabItem) => {
+    const isMore = item.key === 'more';
+    const isHighlighted = item.isActive || (isMore && isMoreSheetVisible);
+    const color = isHighlighted
+      ? ACTIVE_COLOR
+      : isMore
+        ? MORE_INACTIVE_COLOR
+        : INACTIVE_COLOR;
+    return (
+      <Pressable
+        key={item.key}
+        accessibilityLabel={item.label}
+        accessibilityRole="button"
+        accessibilityState={{
+          selected: item.isActive,
+          ...(isMore ? { expanded: isMoreSheetVisible } : {}),
+        }}
+        onPress={item.onPress}
+        style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+        testID={`bottom-tab-${item.key}`}
+      >
+        <BottomNavIcon
+          name={item.key}
+          color={color}
+          testID={`bottom-tab-${item.key}-icon`}
+        />
+      </Pressable>
+    );
+  };
+
+  if (isKeyboardVisible) {
+    return null;
+  }
 
   return (
     <>
       <View
-        style={[
-          styles.container,
-          {
-            paddingBottom: Math.max(insets.bottom, spacing.sm),
-          },
-        ]}>
-        {items.map((item) => (
-          <Pressable
-            key={item.key}
-            accessibilityLabel={item.label}
-            accessibilityRole="button"
-            onPress={item.onPress}
-            style={({ pressed }) => [
-              styles.item,
-              pressed && styles.itemPressed,
-            ]}
-            testID={item.testID}>
-            <Ionicons
-              color={item.isActive ? ACTIVE_COLOR : INACTIVE_COLOR}
-              name={item.icon}
-              size={23}
-            />
-            <Text
-              style={[
-                styles.label,
-                { color: item.isActive ? ACTIVE_COLOR : INACTIVE_COLOR },
-              ]}>
-              {item.label}
-            </Text>
-          </Pressable>
-        ))}
+        style={[styles.container, { height, backgroundColor }]}
+        testID="bottom-tab-bar"
+      >
+        <BottomNavSurface width={width} height={height} />
+        <View
+          style={[styles.sideGroup, { left: 0, width: sideWidth }]}
+          testID="bottom-tab-left-group"
+        >
+          {leftItems.map(renderItem)}
+        </View>
+        <View
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          style={[styles.characterHalo, { left: width / 2 - 35 }]}
+        />
+        <Pressable
+          accessibilityLabel={isLoggedIn ? '일기 쓰기' : '로그인'}
+          accessibilityRole="button"
+          onPress={() => router.push(isLoggedIn ? '/compose' : '/login')}
+          style={({ pressed }) => [
+            styles.characterButton,
+            { left: width / 2 - 29 },
+            pressed && styles.pressed,
+          ]}
+          testID={isLoggedIn ? 'bottom-tab-compose' : 'bottom-tab-login'}
+        >
+          <Image
+            accessible={false}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            source={characterImage}
+            resizeMode="cover"
+            style={styles.characterImage}
+            testID="bottom-tab-character"
+          />
+        </Pressable>
+        <View
+          style={[styles.sideGroup, { right: 0, width: sideWidth }]}
+          testID="bottom-tab-right-group"
+        >
+          {rightItems.map(renderItem)}
+        </View>
       </View>
-
       <BottomSheet
         description="프로필, 설정, 문의로 이동하거나 로그아웃할 수 있습니다."
         onClose={() => setIsMoreSheetVisible(false)}
         title="더보기"
-        visible={isMoreSheetVisible}>
+        visible={isMoreSheetVisible}
+      >
         <View style={styles.sheetContent}>
           <ListItemCard
             description="내 프로필과 월별 기록을 확인합니다."
@@ -243,33 +270,39 @@ export function AppBottomTabBar() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flexShrink: 0 },
+  sideGroup: {
+    position: 'absolute',
+    top: 37.5,
+    height: 44,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-around',
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    justifyContent: 'space-evenly',
   },
   item: {
-    minWidth: 52,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    flex: 1,
   },
-  itemPressed: {
-    opacity: 0.7,
+  pressed: { opacity: 0.7 },
+  characterHalo: {
+    position: 'absolute',
+    top: 0,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#F3F4F6',
   },
-  label: {
-    ...typography.caption,
-    fontSize: 11,
-    lineHeight: 14,
+  characterButton: {
+    position: 'absolute',
+    top: 6,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    boxShadow: '0 6px 12px rgba(69,43,20,0.18)',
   },
-  sheetContent: {
-    gap: spacing.sm,
-  },
+  characterImage: { width: 58, height: 58, transform: [{ scale: 1.26 }] },
+  sheetContent: { gap: spacing.sm },
 });

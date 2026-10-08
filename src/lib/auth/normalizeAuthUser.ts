@@ -3,6 +3,7 @@ import type { AuthUser } from '@/types/auth';
 
 type AuthUserLike = Partial<AuthUser> & {
   avatarUrl?: string | null;
+  avatarPath?: string | null;
 };
 
 function getServerOrigin() {
@@ -24,6 +25,7 @@ function normalizeAssetUrl(value?: string | null) {
 
 export function normalizeAuthUser(user: AuthUserLike): AuthUser {
   const rawAvatar =
+    (typeof user.avatarPath === 'string' ? user.avatarPath : '') ||
     (typeof user.avatarUrl === 'string' ? user.avatarUrl : '') ||
     (typeof user.avatar === 'string' ? user.avatar : '');
 
@@ -32,6 +34,8 @@ export function normalizeAuthUser(user: AuthUserLike): AuthUser {
     email: typeof user.email === 'string' ? user.email : '',
     nickname: typeof user.nickname === 'string' ? user.nickname : '',
     avatar: normalizeAssetUrl(rawAvatar),
+    avatarPath:
+      typeof user.avatarPath === 'string' ? normalizeAssetUrl(user.avatarPath) : undefined,
     avatarUrl:
       typeof user.avatarUrl === 'string' ? normalizeAssetUrl(user.avatarUrl) : undefined,
   };

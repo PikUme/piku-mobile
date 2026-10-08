@@ -70,7 +70,7 @@ describe('ProfileCalendarScreen', () => {
     const screen = renderWithProviders(<ProfileCalendarScreen />);
 
     await waitFor(() =>
-      expect(screen.getByLabelText('도리 2026-02-08 기록 있음')).toBeTruthy(),
+      expect(screen.getByLabelText(`도리 ${diary.date} 기록 있음`)).toBeTruthy(),
     );
 
     fireEvent.press(screen.getByTestId('home-calendar-current-day-8'));

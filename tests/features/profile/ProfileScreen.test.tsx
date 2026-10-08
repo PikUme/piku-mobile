@@ -42,6 +42,9 @@ describe('ProfileScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('profile-nickname')).toHaveTextContent('test'));
 
+    fireEvent.press(screen.getByTestId('profile-friend-count-button'));
+    expect(routerMock.push).toHaveBeenCalledWith('/friends');
+
     fireEvent.press(screen.getByTestId('profile-edit-button'));
     expect(routerMock.push).toHaveBeenCalledWith('/profile/edit');
 
