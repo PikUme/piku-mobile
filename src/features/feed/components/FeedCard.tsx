@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Path } from 'react-native-svg';
 import {
   Image,
   LayoutChangeEvent,
@@ -52,6 +53,8 @@ export function FeedCard({
   const imageSize = mediaWidth || Math.max(width - spacing['2xl'] * 2, 280);
   const collapsedPreviewText = post.content.replace(/\s+/g, ' ').trim();
 
+  // The feed API masks anonymous authors with a null userId.
+  const isAnonymousAuthor = post.userId === null;
   const canShowFriendAction = isLoggedIn && viewerUserId !== post.userId;
   const friendshipStatus = post.friendStatus ?? FriendshipStatus.NONE;
 
@@ -130,7 +133,32 @@ export function FeedCard({
     <View style={styles.card} testID={`feed-card-${post.diaryId}`}>
       <View style={styles.header}>
         <View style={styles.profileBlock}>
-          <Avatar name={post.nickname} size={40} source={post.avatar ?? null} />
+          {isAnonymousAuthor ? (
+            <View
+              accessible
+              accessibilityRole="image"
+              accessibilityLabel="익명 프로필 아이콘"
+              style={styles.anonymousAvatar}>
+              <Svg
+                accessible={false}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                pointerEvents="none"
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={colors.mutedText}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round">
+                <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <Circle cx={12} cy={7} r={4} />
+              </Svg>
+            </View>
+          ) : (
+            <Avatar name={post.nickname} size={40} source={post.avatar ?? null} />
+          )}
           <View style={styles.profileTextBlock}>
             <Text numberOfLines={1} style={styles.nickname}>
               {post.nickname}
@@ -305,6 +333,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+  },
+  anonymousAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.border,
   },
   profileTextBlock: {
     flex: 1,

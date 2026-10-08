@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { Image, StyleSheet } from 'react-native';
 import { http, HttpResponse } from 'msw';
 
 import { FeedScreen } from '@/features/feed/screens/FeedScreen';
@@ -82,6 +83,88 @@ describe('FeedScreen', () => {
     expect(screen.getByTestId('feed-card-footer-301').props.style).toEqual(
       expect.objectContaining({ flexDirection: 'row', alignItems: 'center' }),
     );
+  });
+
+  it('renders a masked anonymous author as a person icon without an initial', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              ...buildFeedItem(777),
+              status: 'ANONYMOUS',
+              nickname: '익명',
+              avatar: null,
+              userId: null,
+              friendStatus: 'ANONYMOUS',
+            },
+          ],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
+
+    expect(screen.queryByText('익')).toBeNull();
+    expect(screen.getByRole('image', { name: '익명 프로필 아이콘' })).toHaveStyle({
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#e5e7eb',
+    });
+  });
+
+  it('preserves initials for a normal author whose nickname is also 익명', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [{ ...buildFeedItem(777, { nickname: '익명' }), avatar: null }],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
+
+    expect(screen.getByText('익')).toBeTruthy();
+    expect(screen.queryByRole('image', { name: '익명 프로필 아이콘' })).toBeNull();
+  });
+
+  it('preserves a normal author profile image', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              ...buildFeedItem(777),
+              avatar: 'https://example.com/author-avatar.webp',
+            },
+          ],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      ),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
+
+    const avatar = screen.UNSAFE_getAllByType(Image).find(
+      (image) => image.props.source?.uri === 'https://example.com/author-avatar.webp',
+    );
+    expect(avatar).toBeDefined();
+    expect(StyleSheet.flatten(avatar?.props.style)).toEqual(
+      expect.objectContaining({ width: 40, height: 40, borderRadius: 20 }),
+    );
+    expect(screen.queryByRole('image', { name: '익명 프로필 아이콘' })).toBeNull();
   });
 
   it('optimistically toggles likes and applies the server response', async () => {
