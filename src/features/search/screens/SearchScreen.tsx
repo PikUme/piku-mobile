@@ -53,7 +53,6 @@ export function SearchScreen() {
     fetchNextPage,
     hasNextPage,
     isError,
-    isFetching,
     isFetchingNextPage,
     isFetchNextPageError,
     isPending,
@@ -82,7 +81,6 @@ export function SearchScreen() {
   const headerComponent = (
     <View style={styles.headerContent}>
       <View style={styles.searchCard}>
-        <Text style={styles.searchTitle}>사용자 검색</Text>
         <AppTextField
           autoCapitalize="none"
           autoCorrect={false}
@@ -130,7 +128,6 @@ export function SearchScreen() {
             <LoadingState label="검색 결과를 불러오는 중입니다." />
           ) : (
             <EmptyState
-              description="다른 닉네임으로 다시 검색해보세요."
               title="검색 결과가 없습니다."
             />
           )
@@ -151,11 +148,6 @@ export function SearchScreen() {
                   testID="search-next-page-retry-button">
                   <Text style={styles.retryButtonLabel}>검색 결과 다시 시도</Text>
                 </Pressable>
-              ) : null}
-              {!hasNextPage && !isFetching && !isFetchingNextPage ? (
-                <Text style={styles.endLabel} testID="search-end-label">
-                  모든 검색 결과를 확인했습니다.
-                </Text>
               ) : null}
             </View>
           ) : null
@@ -178,7 +170,6 @@ export function SearchScreen() {
             <Avatar name={item.nickname} size={44} source={item.avatar || null} />
             <View style={styles.resultBody}>
               <Text style={styles.resultName}>{item.nickname}</Text>
-              <Text style={styles.resultDescription}>프로필로 이동</Text>
             </View>
             <Ionicons color={colors.mutedText} name="chevron-forward" size={18} />
           </Pressable>
@@ -204,10 +195,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     backgroundColor: colors.surface,
     padding: spacing.lg,
-  },
-  searchTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
   },
   searchSummary: {
     ...typography.caption,
@@ -239,10 +226,6 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.text,
   },
-  resultDescription: {
-    ...typography.caption,
-    color: colors.mutedText,
-  },
   footerState: {
     paddingBottom: spacing.xl,
     gap: spacing.md,
@@ -260,10 +243,5 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.text,
     fontWeight: '700',
-  },
-  endLabel: {
-    ...typography.caption,
-    color: colors.mutedText,
-    textAlign: 'center',
   },
 });

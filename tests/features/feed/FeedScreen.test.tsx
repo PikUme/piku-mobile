@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, waitFor } from '@testing-library/react-native';
+import { QueryClient } from '@tanstack/react-query';
 import { Image, StyleSheet } from 'react-native';
 import { http, HttpResponse } from 'msw';
 
@@ -44,6 +45,15 @@ const buildFeedItem = (
   friendStatus: overrides.friendStatus ?? FriendshipStatus.NONE,
 });
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+}
+
 describe('FeedScreen', () => {
   beforeEach(() => {
     routerMock.push.mockClear();
@@ -72,6 +82,12 @@ describe('FeedScreen', () => {
     expect(screen.getByTestId('shell-brand-title')).toBeTruthy();
     expect(screen.queryByTestId('shell-user-name')).toBeNull();
     expect(screen.getAllByText('피쿠').length).toBeGreaterThan(0);
+    expect(screen.getByTestId('feed-sort-latest').props.accessibilityState.selected).toBe(
+      true,
+    );
+    expect(screen.getByTestId('feed-sort-recommended').props.accessibilityState.selected).toBe(
+      false,
+    );
     fireEvent.press(screen.getByTestId('feed-card-open-301'));
 
     expect(routerMock.push).toHaveBeenCalledWith({
@@ -79,10 +95,233 @@ describe('FeedScreen', () => {
       params: { id: '301', source: 'feed' },
     });
     expect(screen.getByTestId('feed-like-button-301')).toBeTruthy();
-    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 0');
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('0');
     expect(screen.getByTestId('feed-card-footer-301').props.style).toEqual(
       expect.objectContaining({ flexDirection: 'row', alignItems: 'center' }),
     );
+  });
+
+  it('switches sort from a fresh first page and keeps it for pagination and refresh', async () => {
+    const requests: { sort: string | null; cursor: string | null }[] = [];
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        const sort = params.get('sort') ?? 'recommended';
+        const cursor = params.get('cursor');
+        requests.push({ sort: params.get('sort'), cursor });
+
+        if (sort === 'recommended') {
+          return HttpResponse.json({
+            items: [buildFeedItem(cursor ? 304 : 303)],
+            nextCursor: cursor ? null : 'recommended-cursor',
+            hasNext: !cursor,
+          });
+        }
+
+        return HttpResponse.json({
+          items: [buildFeedItem(cursor ? 302 : 301)],
+          nextCursor: cursor ? null : 'latest-cursor',
+          hasNext: !cursor,
+        });
+      }),
+    );
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, gcTime: Infinity, staleTime: 30_000 },
+      },
+    });
+    const screen = renderWithProviders(<FeedScreen />, { queryClient });
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+    expect(requests).toEqual([{ sort: 'latest', cursor: null }]);
+
+    fireEvent.press(screen.getByTestId('feed-sort-latest'));
+    expect(requests).toHaveLength(1);
+
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onEndReached();
+    });
+    await waitFor(() => expect(screen.getByTestId('feed-card-302')).toBeTruthy());
+    expect(requests[1]).toEqual({ sort: 'latest', cursor: 'latest-cursor' });
+    fireEvent.press(screen.getByTestId('feed-sort-latest'));
+    expect(requests).toHaveLength(2);
+
+    fireEvent.press(screen.getByTestId('feed-sort-recommended'));
+    await waitFor(() => expect(screen.getByTestId('feed-card-303')).toBeTruthy());
+    expect(screen.queryByTestId('feed-card-301')).toBeNull();
+    expect(screen.getByTestId('feed-sort-recommended').props.accessibilityState.selected).toBe(
+      true,
+    );
+
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onEndReached();
+    });
+    await waitFor(() => expect(screen.getByTestId('feed-card-304')).toBeTruthy());
+    expect(requests[3]).toEqual({ sort: null, cursor: 'recommended-cursor' });
+
+    fireEvent.press(screen.getByTestId('feed-sort-latest'));
+    await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
+    expect(screen.queryByTestId('feed-card-302')).toBeNull();
+    expect(requests[4]).toEqual({ sort: 'latest', cursor: null });
+
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onRefresh();
+    });
+    await waitFor(() => expect(requests).toHaveLength(6));
+    expect(requests[5]).toEqual({ sort: 'latest', cursor: null });
+  });
+
+  it('does not request another page while refreshing the current sort', async () => {
+    const refreshFirstPage = createDeferred<Response>();
+    const requests: { sort: string | null; cursor: string | null }[] = [];
+    let firstPageRequestCount = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        const sort = params.get('sort');
+        const cursor = params.get('cursor');
+        requests.push({ sort, cursor });
+
+        if (cursor === 'initial-cursor') {
+          return HttpResponse.json({
+            items: [buildFeedItem(812)],
+            nextCursor: 'old-next-cursor',
+            hasNext: true,
+          });
+        }
+        if (cursor === 'old-next-cursor') {
+          return HttpResponse.json({
+            items: [buildFeedItem(815)],
+            nextCursor: null,
+            hasNext: false,
+          });
+        }
+        if (cursor === 'refreshed-cursor') {
+          return HttpResponse.json({
+            items: [buildFeedItem(814)],
+            nextCursor: null,
+            hasNext: false,
+          });
+        }
+
+        firstPageRequestCount += 1;
+        if (firstPageRequestCount === 1) {
+          return HttpResponse.json({
+            items: [buildFeedItem(811)],
+            nextCursor: 'initial-cursor',
+            hasNext: true,
+          });
+        }
+
+        return refreshFirstPage.promise;
+      }),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-811')).toBeTruthy());
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onEndReached();
+    });
+    await waitFor(() => expect(screen.getByTestId('feed-card-812')).toBeTruthy());
+
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onRefresh();
+    });
+    await waitFor(() => expect(requests).toHaveLength(3));
+    expect(requests[2]).toEqual({ sort: 'latest', cursor: null });
+
+    await act(async () => {
+      screen.getByTestId('feed-list').props.onEndReached();
+    });
+    expect(requests).toHaveLength(3);
+
+    await act(async () => {
+      refreshFirstPage.resolve(
+        HttpResponse.json({
+          items: [buildFeedItem(813)],
+          nextCursor: 'refreshed-cursor',
+          hasNext: true,
+        }),
+      );
+      await refreshFirstPage.promise;
+    });
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-814')).toBeTruthy());
+    expect(requests[3]).toEqual({ sort: 'latest', cursor: 'refreshed-cursor' });
+    expect(screen.queryByTestId('feed-card-812')).toBeNull();
+  });
+
+  it('ignores late responses from previous sort selections', async () => {
+    const latestFirst = createDeferred<Response>();
+    const recommended = createDeferred<Response>();
+    const latestSecond = createDeferred<Response>();
+    let latestRequestCount = 0;
+    let recommendedRequestCount = 0;
+
+    server.use(
+      http.get(`${API_BASE_URL}/diary`, async ({ request }) => {
+        const sort = new URL(request.url).searchParams.get('sort') ?? 'recommended';
+        if (sort === 'recommended') {
+          recommendedRequestCount += 1;
+          return recommended.promise;
+        }
+
+        latestRequestCount += 1;
+        return latestRequestCount === 1
+          ? latestFirst.promise
+          : latestSecond.promise;
+      }),
+    );
+
+    const screen = renderWithProviders(<FeedScreen />);
+
+    await waitFor(() => expect(latestRequestCount).toBe(1));
+    fireEvent.press(screen.getByTestId('feed-sort-recommended'));
+    await waitFor(() => expect(recommendedRequestCount).toBe(1));
+    fireEvent.press(screen.getByTestId('feed-sort-latest'));
+    await waitFor(() => expect(latestRequestCount).toBe(2));
+
+    await act(async () => {
+      latestFirst.resolve(
+        HttpResponse.json({
+          items: [buildFeedItem(801)],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      );
+      await latestFirst.promise;
+    });
+    expect(screen.queryByTestId('feed-card-801')).toBeNull();
+
+    await act(async () => {
+      recommended.resolve(
+        HttpResponse.json({
+          items: [buildFeedItem(802)],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      );
+      await recommended.promise;
+    });
+    expect(screen.queryByTestId('feed-card-802')).toBeNull();
+
+    await act(async () => {
+      latestSecond.resolve(
+        HttpResponse.json({
+          items: [buildFeedItem(803)],
+          nextCursor: null,
+          hasNext: false,
+        }),
+      );
+      await latestSecond.promise;
+    });
+
+    await waitFor(() => expect(screen.getByTestId('feed-card-803')).toBeTruthy());
+    expect(screen.queryByTestId('feed-card-801')).toBeNull();
+    expect(screen.queryByTestId('feed-card-802')).toBeNull();
   });
 
   it('renders a masked anonymous author as a person icon without an initial', async () => {
@@ -183,13 +422,13 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
-    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('1');
     expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
       true,
     );
 
     await waitFor(() =>
-      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 3'),
+      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('3'),
     );
   });
 
@@ -208,10 +447,10 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-301')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
-    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('1');
 
     await waitFor(() =>
-      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 0'),
+      expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('0'),
     );
     expect(screen.getByTestId('feed-like-button-301').props.accessibilityState.selected).toBe(
       false,
@@ -241,7 +480,7 @@ describe('FeedScreen', () => {
     await waitFor(() => expect(screen.getByTestId('feed-card-777')).toBeTruthy());
     fireEvent.press(screen.getByTestId('feed-like-button-777'));
 
-    expect(screen.getByTestId('feed-like-count-777')).toHaveTextContent('좋아요 3');
+    expect(screen.getByTestId('feed-like-count-777')).toHaveTextContent('3');
     expect(screen.getByTestId('feed-like-button-777').props.accessibilityState.selected).toBe(
       false,
     );
@@ -274,7 +513,7 @@ describe('FeedScreen', () => {
     fireEvent.press(screen.getByTestId('feed-like-button-301'));
 
     await waitFor(() => expect(requestCount).toBe(1));
-    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('좋아요 1');
+    expect(screen.getByTestId('feed-like-count-301')).toHaveTextContent('1');
 
     resolveRequest();
 
@@ -378,7 +617,7 @@ describe('FeedScreen', () => {
     });
 
     await waitFor(() => expect(screen.getByTestId('feed-card-303')).toBeTruthy());
-    expect(screen.getByTestId('feed-end-label')).toBeTruthy();
+    expect(screen.queryByTestId('feed-end-label')).toBeNull();
   });
 
   it('updates image position label when the carousel is swiped', async () => {

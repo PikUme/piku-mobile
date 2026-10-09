@@ -18,6 +18,9 @@ export function normalizeApiError(error: unknown): ApiError {
   if (isAxiosError(error)) {
     const responseData = getResponseData(error.response?.data);
     const message =
+      (typeof responseData?.detail === 'string' && responseData.detail.trim()
+        ? responseData.detail
+        : undefined) ??
       (typeof responseData?.message === 'string' ? responseData.message : undefined) ??
       error.message ??
       '요청 처리 중 오류가 발생했습니다.';

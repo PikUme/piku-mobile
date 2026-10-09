@@ -414,7 +414,6 @@ export function ProfileScreen() {
         <View style={styles.timelineSection}>
           <View style={styles.timelineSectionHeader}>
             <Text style={styles.timelineSectionTitle}>Diary</Text>
-            <Text style={styles.timelineSectionCaption}>월별 기록 달성도</Text>
           </View>
           {profile.monthlyDiaryCount.length > 0 ? (
             <View style={styles.timelineSectionList}>
@@ -438,7 +437,6 @@ export function ProfileScreen() {
             </View>
           ) : (
             <EmptyState
-              description="아직 작성된 일기 기록이 없습니다."
               title="기록이 비어 있습니다."
             />
           )}
@@ -552,10 +550,6 @@ const styles = StyleSheet.create({
   timelineSectionTitle: {
     ...typography.heading,
     color: colors.text,
-  },
-  timelineSectionCaption: {
-    ...typography.caption,
-    color: colors.mutedText,
   },
   timelineYearSection: {
     gap: spacing.md,

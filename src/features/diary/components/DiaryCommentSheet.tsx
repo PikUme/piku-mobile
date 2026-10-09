@@ -5,7 +5,6 @@ import { useRouter } from 'expo-router';
 import { AppButton } from '@/components/ui/AppButton';
 import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { CommentComposer } from '@/features/diary/components/CommentComposer';
@@ -194,7 +193,11 @@ export function DiaryCommentSheet({
     };
   }, [applyCommentCount, currentDiaryId, visible]);
 
-  const handleOpenProfile = (userId: string) => {
+  const handleOpenProfile = (userId: string | null) => {
+    if (!userId) {
+      return;
+    }
+
     onClose();
     router.push(`/profile/${userId}`);
   };
@@ -552,6 +555,7 @@ export function DiaryCommentSheet({
         void handleSubmit();
       }}
       replyTo={replyTo}
+      isAnonymousDiary={diary?.status === 'ANONYMOUS'}
       testIDPrefix={testIDPrefix}
       value={value}
     />
@@ -580,6 +584,7 @@ export function DiaryCommentSheet({
             <CommentItem
               key={comment.id}
               comment={comment}
+              isAnonymousDiary={diary.status === 'ANONYMOUS'}
               onFetchMoreReplies={(commentId) => {
                 void handleFetchMoreReplies(commentId);
               }}
@@ -594,12 +599,6 @@ export function DiaryCommentSheet({
               viewerUserId={user?.id}
             />
           ))}
-          {comments.length === 0 && !isLoadingComments ? (
-            <EmptyState
-              description="첫 번째 댓글을 남겨보세요."
-              title="아직 댓글이 없습니다."
-            />
-          ) : null}
           {hasMore && comments.length > 0 ? (
             <Pressable
               accessibilityRole="button"
@@ -635,10 +634,16 @@ export function DiaryCommentSheet({
               <View style={styles.previewHeader}>
                 <Pressable
                   accessibilityRole="button"
+                  disabled={!diary.userId}
                   onPress={() => handleOpenProfile(diary.userId)}
                   style={({ pressed }) => pressed && styles.pressed}
                   testID={`${testIDPrefix}-profile-button`}>
-                  <Avatar name={diary.nickname} size={36} source={diary.avatar ?? null} />
+                  <Avatar
+                    isAnonymous={diary.status === 'ANONYMOUS' || diary.userId === null}
+                    name={diary.nickname}
+                    size={36}
+                    source={diary.avatar ?? null}
+                  />
                 </Pressable>
                 <View style={styles.previewText}>
                   <View style={styles.previewTitleRow}>

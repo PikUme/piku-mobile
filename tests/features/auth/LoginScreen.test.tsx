@@ -107,7 +107,12 @@ describe('LoginScreen', () => {
     server.use(
       http.post(`${API_BASE_URL}/auth/login`, async () =>
         HttpResponse.json(
-          { status: 401, message: '이메일 또는 비밀번호를 확인해 주세요.' },
+          {
+            type: 'https://api.pikume.com/problems/security/invalid-credentials',
+            title: 'Unauthorized',
+            status: 401,
+            detail: '이메일 또는 비밀번호가 올바르지 않습니다.',
+          },
           { status: 401 },
         ),
       ),
@@ -126,7 +131,7 @@ describe('LoginScreen', () => {
       expect(screen.getByTestId('login-error-banner')).toBeTruthy(),
     );
     expect(
-      screen.getByText('이메일 또는 비밀번호를 확인해 주세요.'),
+      screen.getByText('이메일 또는 비밀번호가 올바르지 않습니다.'),
     ).toBeTruthy();
     expect(useAuthStore.getState().isLoggedIn).toBe(false);
   });

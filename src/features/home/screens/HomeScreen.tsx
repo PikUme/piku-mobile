@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   PanResponder,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -25,7 +24,7 @@ import { getMonthlyDiaries } from '@/lib/api/diaries';
 import { getAllFriends } from '@/lib/api/friends';
 import { useAuthStore } from '@/store/authStore';
 import type { MonthlyDiary } from '@/types/diary';
-import { colors, radius, shadows, spacing, typography } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 const TODAY = new Date();
 const FRIEND_SWIPE_THRESHOLD = 44;
@@ -243,10 +242,13 @@ export function HomeScreen() {
 
       {monthlyDiariesQuery.isPending || monthlyDiariesQuery.isFetching ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
-          <View style={styles.loadingCard}>
-            <ActivityIndicator color={colors.primary} size="small" />
-            <Text style={styles.loadingLabel}>캘린더를 불러오는 중입니다.</Text>
-          </View>
+          <ActivityIndicator
+            accessible
+            accessibilityLabel="캘린더를 불러오는 중입니다."
+            accessibilityRole="progressbar"
+            color={colors.primary}
+            size="small"
+          />
         </View>
       ) : null}
     </ScreenContainer>
@@ -266,20 +268,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 254, 248, 0.74)',
-  },
-  loadingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...shadows.card,
-  },
-  loadingLabel: {
-    ...typography.caption,
-    color: colors.text,
   },
   swipeArea: {
     flex: 1,

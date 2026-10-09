@@ -60,36 +60,6 @@ const CHARACTER_EMOJI: Record<string, string> = {
   rabbit: '🐰',
 };
 
-function StepIndicator({
-  step,
-}: {
-  step: 1 | 2;
-}) {
-  return (
-    <View style={styles.stepRow}>
-      {[
-        { value: 1, label: '기본 정보' },
-        { value: 2, label: '캐릭터 선택' },
-      ].map((item) => {
-        const isActive = step === item.value;
-        return (
-          <View
-            key={item.value}
-            style={[styles.stepChip, isActive && styles.stepChipActive]}>
-            <Text
-              style={[
-                styles.stepChipText,
-                isActive && styles.stepChipTextActive,
-              ]}>
-              {item.value}. {item.label}
-            </Text>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
 function AgreementRow({
   checked,
   label,
@@ -387,7 +357,6 @@ export function SignupScreen() {
   return (
     <>
       <AuthScreenLayout
-        description="이메일 인증과 캐릭터 선택을 완료하면 바로 로그인할 수 있습니다."
         footer={
           <View style={styles.footerActions}>
             {message ? (
@@ -434,8 +403,6 @@ export function SignupScreen() {
           router.replace('/login');
         }}
         title="가입하기">
-        <StepIndicator step={step} />
-
         {step === 1 ? (
           <View style={styles.section}>
             <AppTextField
@@ -633,28 +600,6 @@ export function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  stepRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  stepChip: {
-    borderRadius: radius.pill,
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  stepChipActive: {
-    backgroundColor: colors.primarySoft,
-  },
-  stepChipText: {
-    ...typography.caption,
-    color: colors.mutedText,
-    fontWeight: '700',
-  },
-  stepChipTextActive: {
-    color: colors.primary,
-  },
   section: {
     gap: spacing.lg,
   },

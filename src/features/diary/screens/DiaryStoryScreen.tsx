@@ -117,10 +117,20 @@ export function DiaryStoryScreen() {
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push(`/profile/${diary.userId}`)}
+            disabled={!diary.userId}
+            onPress={() => {
+              if (diary.userId) {
+                router.push(`/profile/${diary.userId}`);
+              }
+            }}
             style={({ pressed }) => [styles.authorBlock, pressed && styles.pressed]}
             testID="diary-story-author-button">
-            <Avatar name={diary.nickname} size={36} source={diary.avatar ?? null} />
+            <Avatar
+              isAnonymous={diary.status === 'ANONYMOUS' || diary.userId === null}
+              name={diary.nickname}
+              size={36}
+              source={diary.avatar ?? null}
+            />
             <View style={styles.authorText}>
               <Text style={styles.authorName}>{diary.nickname}</Text>
               <Text style={styles.headerDate}>{formatDiaryDate(diary.date)}</Text>
@@ -178,7 +188,6 @@ export function DiaryStoryScreen() {
       />
 
       <BottomSheet
-        description="본인 글일 때만 삭제 메뉴가 노출됩니다."
         onClose={() => setIsActionSheetVisible(false)}
         title="일기 옵션"
         visible={isActionSheetVisible}>

@@ -151,9 +151,10 @@ describe('AppBottomTabBar', () => {
         .find((node) => node.props.name === 'more')?.props.color,
     ).toBe('#FF5A00');
     expect(screen.getByText('프로필')).toBeTruthy();
+    expect(screen.getByText('친구 목록')).toBeTruthy();
     expect(screen.getByText('설정')).toBeTruthy();
     expect(screen.getByText('로그아웃')).toBeTruthy();
-    expect(screen.getByText('문의')).toBeTruthy();
+    expect(screen.queryByText('문의')).toBeNull();
     fireEvent.press(screen.getByTestId('bottom-sheet-scrim'));
     expect(
       screen.getByRole('button', { name: '더보기' }).props.accessibilityState,
@@ -167,8 +168,8 @@ describe('AppBottomTabBar', () => {
 
   it.each([
     ['프로필', '/profile/user-1'],
+    ['친구 목록', '/friends'],
     ['설정', '/settings'],
-    ['문의', '/feedback'],
   ])('keeps the existing More %s action', (label, href) => {
     logIn();
     const screen = render(<AppBottomTabBar />);

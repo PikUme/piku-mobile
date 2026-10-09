@@ -1,8 +1,8 @@
 export interface Comment {
   id: number;
   diaryId: number;
-  userId: string;
-  nickname: string;
+  userId: string | null;
+  nickname: string | null;
   avatar: string | null;
   content: string;
   parentId: number | null;
@@ -29,7 +29,8 @@ export interface CommentSheetDiaryPreview {
   commentCount: number;
   nickname: string;
   avatar: string | null;
-  userId: string;
+  userId: string | null;
+  status: 'PUBLIC' | 'FRIENDS' | 'PRIVATE' | 'ANONYMOUS';
   createdAt: string;
   imgUrls?: string[];
 }

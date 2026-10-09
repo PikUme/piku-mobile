@@ -309,21 +309,11 @@ export function ProfileEditScreen() {
         <Avatar name={nickname || user.nickname} size={64} source={selectedCharacter?.displayImageUrl ?? originalAvatar} />
         <View style={styles.profileSummaryText}>
           <Text style={styles.summaryName}>{nickname || user.nickname}</Text>
-          <Text style={styles.summaryDescription}>
-            닉네임과 캐릭터를 변경하면 홈과 프로필 화면에 바로 반영됩니다.
-          </Text>
         </View>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>기본 정보</Text>
-        <AppTextField
-          editable={false}
-          label="이메일"
-          testID="profile-edit-email-input"
-          value={user.email}
-        />
-
         <View style={styles.nicknameBlock}>
           <View style={styles.nicknameFieldBlock}>
             <AppTextField
@@ -426,11 +416,6 @@ const styles = StyleSheet.create({
   summaryName: {
     ...typography.heading,
     color: colors.text,
-  },
-  summaryDescription: {
-    ...typography.caption,
-    color: colors.mutedText,
-    lineHeight: 20,
   },
   section: {
     gap: spacing.lg,

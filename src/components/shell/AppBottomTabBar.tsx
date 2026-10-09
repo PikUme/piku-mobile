@@ -226,14 +226,12 @@ export function AppBottomTabBar({
         </View>
       </View>
       <BottomSheet
-        description="프로필, 설정, 문의로 이동하거나 로그아웃할 수 있습니다."
         onClose={() => setIsMoreSheetVisible(false)}
         title="더보기"
         visible={isMoreSheetVisible}
       >
         <View style={styles.sheetContent}>
           <ListItemCard
-            description="내 프로필과 월별 기록을 확인합니다."
             onPress={() => {
               setIsMoreSheetVisible(false);
               if (user) {
@@ -243,7 +241,13 @@ export function AppBottomTabBar({
             title="프로필"
           />
           <ListItemCard
-            description="앱 버전과 권한 상태를 확인합니다."
+            onPress={() => {
+              setIsMoreSheetVisible(false);
+              router.push('/friends');
+            }}
+            title="친구 목록"
+          />
+          <ListItemCard
             onPress={() => {
               setIsMoreSheetVisible(false);
               router.push('/settings');
@@ -251,15 +255,6 @@ export function AppBottomTabBar({
             title="설정"
           />
           <ListItemCard
-            description="문의나 개선 의견을 남깁니다."
-            onPress={() => {
-              setIsMoreSheetVisible(false);
-              router.push('/feedback');
-            }}
-            title="문의"
-          />
-          <ListItemCard
-            description="현재 계정 세션을 종료합니다."
             onPress={handleLogout}
             title="로그아웃"
           />

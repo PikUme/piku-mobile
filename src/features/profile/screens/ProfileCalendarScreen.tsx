@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
@@ -20,7 +20,7 @@ import { getMonthlyDiaries } from '@/lib/api/diaries';
 import { getProfileInfo } from '@/lib/api/profile';
 import type { AuthUser } from '@/types/auth';
 import type { MonthlyDiary } from '@/types/diary';
-import { colors, radius, shadows, spacing, typography } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 const TODAY = new Date();
 
@@ -228,10 +228,13 @@ export function ProfileCalendarScreen() {
 
       {monthlyDiariesQuery.isPending || monthlyDiariesQuery.isFetching ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
-          <View style={styles.loadingCard}>
-            <ActivityIndicator color={colors.primary} size="small" />
-            <Text style={styles.loadingLabel}>캘린더를 불러오는 중입니다.</Text>
-          </View>
+          <ActivityIndicator
+            accessible
+            accessibilityLabel="캘린더를 불러오는 중입니다."
+            accessibilityRole="progressbar"
+            color={colors.primary}
+            size="small"
+          />
         </View>
       ) : null}
     </ScreenContainer>
@@ -254,21 +257,5 @@ const styles = StyleSheet.create({
     left: spacing['2xl'],
     right: spacing['2xl'],
     alignItems: 'center',
-  },
-  loadingCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.card,
-  },
-  loadingLabel: {
-    ...typography.caption,
-    color: colors.text,
   },
 });

@@ -3,6 +3,7 @@ import { fireEvent, waitFor } from '@testing-library/react-native';
 
 import { DiaryCommentSheet } from '@/features/diary/components/DiaryCommentSheet';
 import { buildLocalDiaryDetailMock } from '@/lib/api/diaries';
+import * as commentsApi from '@/lib/api/comments';
 import { createLocalCommentMock } from '@/lib/api/comments';
 import * as feedback from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
@@ -91,6 +92,84 @@ describe('DiaryCommentSheet', () => {
     );
 
     expect(screen.queryByTestId('diary-comment-sheet-detail-button')).toBeNull();
+  });
+
+  it('uses anonymous avatars for an anonymous diary preview and its masked comments without profile navigation', async () => {
+    jest.spyOn(commentsApi, 'getRootComments').mockResolvedValueOnce({
+      content: [
+        {
+          id: 30503,
+          diaryId: 305,
+          userId: null,
+          nickname: '익명',
+          avatar: null,
+          content: '익명 일기에 남긴 댓글입니다.',
+          parentId: null,
+          createdAt: '2026-03-05T10:00:00.000Z',
+          replyCount: 1,
+        },
+      ],
+      last: true,
+      totalElements: 1,
+    });
+    jest.spyOn(commentsApi, 'getReplies').mockResolvedValueOnce({
+      content: [
+        {
+          id: 30504,
+          diaryId: 305,
+          userId: null,
+          nickname: '익명',
+          avatar: null,
+          content: '익명 일기에 남긴 답글입니다.',
+          parentId: 30503,
+          createdAt: '2026-03-05T10:01:00.000Z',
+          replyCount: 0,
+        },
+      ],
+      last: true,
+      totalElements: 1,
+    });
+    jest.spyOn(commentsApi, 'createComment').mockResolvedValue({
+      id: 30505,
+      content: '새 익명 댓글입니다.',
+      createdAt: '2026-03-05T10:02:00.000Z',
+    } as never);
+    const diary = {
+      ...buildLocalDiaryDetailMock(305),
+      status: 'ANONYMOUS' as const,
+      userId: null,
+      nickname: '익명',
+      avatar: null,
+    };
+    const screen = renderWithProviders(
+      <DiaryCommentSheet diary={diary} onClose={jest.fn()} visible />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText('익명 일기에 남긴 댓글입니다.')).toBeTruthy(),
+    );
+
+    fireEvent.press(screen.getByTestId('comment-toggle-replies-30503'));
+    await waitFor(() => expect(screen.getByText('익명 일기에 남긴 답글입니다.')).toBeTruthy());
+    expect(screen.getAllByRole('image', { name: '익명 프로필 아이콘' })).toHaveLength(3);
+    expect(screen.getAllByRole('image', { name: '익명 프로필 아이콘' })[2]).toHaveStyle({
+      width: 28,
+      height: 28,
+    });
+    fireEvent.press(screen.getByTestId('diary-comment-sheet-profile-button'));
+    fireEvent.press(screen.getByTestId('comment-profile-button-30503'));
+    fireEvent.press(screen.getByTestId('comment-profile-button-30504'));
+    expect(routerMock.push).not.toHaveBeenCalledWith('/profile/null');
+
+    fireEvent.press(screen.getByTestId('comment-reply-button-30503'));
+    expect(screen.getByText('익명님에게 답글 작성 중')).toBeTruthy();
+    expect(screen.queryByText('test님에게 답글 작성 중')).toBeNull();
+    fireEvent.press(screen.getByTestId('diary-comment-sheet-cancel-context-button'));
+
+    fireEvent.changeText(screen.getByTestId('diary-comment-sheet-input'), '새 익명 댓글입니다.');
+    fireEvent.press(screen.getByTestId('diary-comment-sheet-submit-button'));
+    await waitFor(() => expect(screen.getByText('새 익명 댓글입니다.')).toBeTruthy());
+    expect(screen.getAllByRole('image', { name: '익명 프로필 아이콘' })).toHaveLength(4);
   });
 
   it('shows the preview more action when the diary body contains explicit line breaks', async () => {

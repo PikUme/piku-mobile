@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle, Path } from 'react-native-svg';
 import {
   Image,
   LayoutChangeEvent,
@@ -54,8 +53,9 @@ export function FeedCard({
   const collapsedPreviewText = post.content.replace(/\s+/g, ' ').trim();
 
   // The feed API masks anonymous authors with a null userId.
-  const isAnonymousAuthor = post.userId === null;
-  const canShowFriendAction = isLoggedIn && viewerUserId !== post.userId;
+  const isAnonymousAuthor = post.status === 'ANONYMOUS' || post.userId === null;
+  const canShowFriendAction =
+    isLoggedIn && !isAnonymousAuthor && viewerUserId !== post.userId;
   const friendshipStatus = post.friendStatus ?? FriendshipStatus.NONE;
 
   useEffect(() => {
@@ -133,32 +133,12 @@ export function FeedCard({
     <View style={styles.card} testID={`feed-card-${post.diaryId}`}>
       <View style={styles.header}>
         <View style={styles.profileBlock}>
-          {isAnonymousAuthor ? (
-            <View
-              accessible
-              accessibilityRole="image"
-              accessibilityLabel="익명 프로필 아이콘"
-              style={styles.anonymousAvatar}>
-              <Svg
-                accessible={false}
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                pointerEvents="none"
-                width={20}
-                height={20}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke={colors.mutedText}
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round">
-                <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <Circle cx={12} cy={7} r={4} />
-              </Svg>
-            </View>
-          ) : (
-            <Avatar name={post.nickname} size={40} source={post.avatar ?? null} />
-          )}
+          <Avatar
+            isAnonymous={isAnonymousAuthor}
+            name={post.nickname}
+            size={40}
+            source={post.avatar ?? null}
+          />
           <View style={styles.profileTextBlock}>
             <Text numberOfLines={1} style={styles.nickname}>
               {post.nickname}
@@ -225,6 +205,7 @@ export function FeedCard({
       <View style={styles.footer} testID={`feed-card-footer-${post.diaryId}`}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={`좋아요 ${post.likeCount}개`}
           accessibilityState={{ selected: post.isLiked }}
           disabled={isLikePending}
           onPress={() => onToggleLike(post)}
@@ -240,16 +221,17 @@ export function FeedCard({
             size={18}
           />
           <Text style={styles.commentLabel} testID={`feed-like-count-${post.diaryId}`}>
-            좋아요 {post.likeCount}
+            {post.likeCount}
           </Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={`댓글 ${post.commentCount}개`}
           onPress={() => onOpenComments(post)}
           style={({ pressed }) => [styles.commentButton, pressed && styles.pressed]}
           testID={`feed-comment-button-${post.diaryId}`}>
           <Ionicons color={colors.text} name="chatbubble-outline" size={18} />
-          <Text style={styles.commentLabel}>댓글 {post.commentCount}</Text>
+          <Text style={styles.commentLabel}>{post.commentCount}</Text>
         </Pressable>
       </View>
 
@@ -333,14 +315,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  anonymousAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.border,
   },
   profileTextBlock: {
     flex: 1,

@@ -9,6 +9,7 @@ interface CommentComposerProps {
   isSubmitting: boolean;
   editingComment: Comment | null;
   replyTo: Comment | null;
+  isAnonymousDiary?: boolean;
   value: string;
   onChange: (value: string) => void;
   onCancelContext: () => void;
@@ -23,6 +24,7 @@ export function CommentComposer({
   isSubmitting,
   editingComment,
   replyTo,
+  isAnonymousDiary = false,
   value,
   onChange,
   onCancelContext,
@@ -57,7 +59,7 @@ export function CommentComposer({
   const contextLabel = editingComment
     ? '댓글 수정 중'
     : replyTo
-      ? `${replyTo.nickname}님에게 답글 작성 중`
+      ? `${isAnonymousDiary ? '익명' : replyTo.nickname ?? '익명'}님에게 답글 작성 중`
       : null;
 
   return (

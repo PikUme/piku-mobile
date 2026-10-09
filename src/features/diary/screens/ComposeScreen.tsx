@@ -556,7 +556,6 @@ export function ComposeScreen() {
       </ScreenContainer>
 
       <BottomSheet
-        description="앨범에서 여러 장을 고르거나 카메라로 바로 촬영할 수 있습니다."
         onClose={() => setIsPhotoSourceSheetVisible(false)}
         title="사진 추가"
         visible={isPhotoSourceSheetVisible}>
@@ -571,9 +570,6 @@ export function ComposeScreen() {
             <Ionicons color={colors.text} name="images-outline" size={20} />
             <View style={styles.photoSourceText}>
               <Text style={styles.photoSourceTitle}>앨범에서 선택</Text>
-              <Text style={styles.photoSourceDescription}>
-                여러 장을 한 번에 선택할 수 있습니다.
-              </Text>
             </View>
           </Pressable>
           <Pressable
@@ -586,9 +582,6 @@ export function ComposeScreen() {
             <Ionicons color={colors.text} name="camera-outline" size={20} />
             <View style={styles.photoSourceText}>
               <Text style={styles.photoSourceTitle}>카메라 촬영</Text>
-              <Text style={styles.photoSourceDescription}>
-                지금 바로 사진을 촬영해 추가합니다.
-              </Text>
             </View>
           </Pressable>
         </View>
@@ -829,15 +822,10 @@ const styles = StyleSheet.create({
   },
   photoSourceText: {
     flex: 1,
-    gap: spacing.xs,
   },
   photoSourceTitle: {
     ...typography.bodyStrong,
     color: colors.text,
-  },
-  photoSourceDescription: {
-    ...typography.caption,
-    color: colors.mutedText,
   },
   privacySheetContent: {
     gap: spacing.sm,

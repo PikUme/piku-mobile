@@ -6,7 +6,7 @@ export interface MonthlyDiary {
   coverPhotoUrl: string | null;
 }
 
-export type DiaryVisibility = 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
+export type DiaryVisibility = 'PUBLIC' | 'FRIENDS' | 'PRIVATE' | 'ANONYMOUS';
 
 export interface FeedDiary {
   diaryId: number;
@@ -16,7 +16,7 @@ export interface FeedDiary {
   date: string;
   nickname: string;
   avatar: string | null;
-  userId: string;
+  userId: string | null;
   createdAt: string;
   commentCount: number;
   likeCount: number;
@@ -57,7 +57,7 @@ export interface DiaryDetail {
   imgUrls: string[];
   nickname: string;
   avatar: string | null;
-  userId: string;
+  userId: string | null;
   comments?: DiaryComment[];
 }
 

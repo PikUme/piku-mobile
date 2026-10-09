@@ -4,6 +4,8 @@ import type { ApiError } from '@/lib/api/errors';
 import type { CursorPage, FeedDiary } from '@/types/diary';
 import { FriendshipStatus } from '@/types/friend';
 
+export type FeedSortMode = 'latest' | 'recommended';
+
 interface FeedLikeResponseRaw {
   diaryId: number;
   likeCount: number;
@@ -114,10 +116,18 @@ const isRecoverableLocalNetworkError = (error: unknown) => {
 function getLocalFeedCursor(
   cursor?: string | null,
   limit = 20,
+  sort: FeedSortMode = 'latest',
 ): CursorPage<FeedDiary> {
   const start =
     cursor === 'cursor-2' ? 2 : cursor === 'cursor-3' ? 4 : 0;
-  const items = LOCAL_FEED_ITEMS.slice(start, start + limit);
+  const orderedItems =
+    sort === 'recommended'
+      ? [...LOCAL_FEED_ITEMS].sort(
+          (left, right) =>
+            right.likeCount + right.commentCount - (left.likeCount + left.commentCount),
+        )
+      : LOCAL_FEED_ITEMS;
+  const items = orderedItems.slice(start, start + limit);
   const nextIndex = start + items.length;
 
   return {
@@ -157,15 +167,19 @@ const updateLocalFeedLike = (diaryId: number, nextLiked: boolean): FeedLikeRespo
 export async function getFeedCursor(
   cursor?: string | null,
   limit = 20,
+  sort: FeedSortMode = 'latest',
 ): Promise<CursorPage<FeedDiary>> {
   if (shouldUseLocalFeedMock) {
-    return getLocalFeedCursor(cursor, limit);
+    return getLocalFeedCursor(cursor, limit, sort);
   }
 
   try {
     const params: Record<string, string | number> = { limit };
     if (cursor != null) {
       params.cursor = cursor;
+    }
+    if (sort !== 'recommended') {
+      params.sort = sort;
     }
 
     const response = await apiClient.get<CursorPage<FeedDiary>>('/diary', {
@@ -175,7 +189,7 @@ export async function getFeedCursor(
     return response.data;
   } catch (error) {
     if (isRecoverableLocalNetworkError(error)) {
-      return getLocalFeedCursor(cursor, limit);
+      return getLocalFeedCursor(cursor, limit, sort);
     }
 
     throw error;

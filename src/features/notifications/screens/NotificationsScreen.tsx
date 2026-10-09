@@ -80,6 +80,20 @@ function buildNotificationRoute(notification: AppNotification) {
   return null;
 }
 
+function isAnonymousDiaryNotification(notification: AppNotification) {
+  const diaryActivity =
+    notification.type === 'COMMENT' ||
+    notification.type === 'REPLY' ||
+    notification.type === 'LIKE' ||
+    notification.type === 'FRIEND_DIARY';
+
+  return (
+    diaryActivity &&
+    notification.relatedDiaryId !== null &&
+    notification.diaryUserId === null
+  );
+}
+
 export function NotificationsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -265,7 +279,6 @@ export function NotificationsScreen() {
             <LoadingState label="알림을 불러오는 중입니다." />
           ) : (
             <EmptyState
-              description="새로운 활동이 생기면 이곳에서 바로 확인할 수 있습니다."
               title="모든 알림을 확인 완료했어요."
             />
           )
@@ -284,13 +297,6 @@ export function NotificationsScreen() {
                   testID="notifications-next-page-retry-button">
                   <Text style={styles.retryButtonLabel}>알림 다시 시도</Text>
                 </Pressable>
-              ) : null}
-              {!notificationsQuery.hasNextPage &&
-              !notificationsQuery.isFetching &&
-              !notificationsQuery.isFetchingNextPage ? (
-                <Text style={styles.endLabel} testID="notifications-end-label">
-                  모든 알림을 확인했습니다.
-                </Text>
               ) : null}
             </View>
           ) : null
@@ -350,10 +356,15 @@ export function NotificationsScreen() {
               ]}
               testID={`notification-row-${item.id}`}>
               <View style={styles.rowLeading}>
-                <Avatar name={item.nickname} size={44} source={item.avatarUrl || null} />
+                <Avatar
+                  isAnonymous={isAnonymousDiaryNotification(item)}
+                  name={item.nickname ?? undefined}
+                  size={44}
+                  source={item.avatarUrl || null}
+                />
                 <View style={styles.rowTextBlock}>
                   <Text style={styles.messageText}>
-                    <Text style={styles.nicknameText}>{item.nickname}</Text>
+                    <Text style={styles.nicknameText}>{item.nickname ?? ''}</Text>
                     {` ${item.message}`}
                   </Text>
                   {!item.isRead ? <View style={styles.unreadDot} testID={`notification-unread-dot-${item.id}`} /> : null}
@@ -493,11 +504,6 @@ const styles = StyleSheet.create({
   retryButtonLabel: {
     ...typography.caption,
     color: colors.text,
-  },
-  endLabel: {
-    ...typography.caption,
-    textAlign: 'center',
-    color: colors.mutedText,
   },
   busyOverlay: {
     ...StyleSheet.absoluteFillObject,

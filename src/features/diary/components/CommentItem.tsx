@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,8 +11,9 @@ interface CommentItemProps {
   replies: Comment[];
   replyState?: CommentRepliesState;
   viewerUserId?: string;
+  isAnonymousDiary?: boolean;
   nested?: boolean;
-  onOpenProfile: (userId: string) => void;
+  onOpenProfile: (userId: string | null) => void;
   onReply?: (comment: Comment) => void;
   onToggleReplies?: (comment: Comment) => void;
   onFetchMoreReplies?: (commentId: number) => void;
@@ -24,6 +25,7 @@ export function CommentItem({
   replies,
   replyState,
   viewerUserId,
+  isAnonymousDiary = false,
   nested = false,
   onOpenProfile,
   onReply,
@@ -32,6 +34,9 @@ export function CommentItem({
   onOpenActions,
 }: CommentItemProps) {
   const isOwner = Boolean(viewerUserId) && viewerUserId === comment.userId;
+  const isAnonymousAuthor =
+    comment.nickname !== null && (isAnonymousDiary || comment.userId === null);
+  const displayNickname = isAnonymousAuthor ? '익명' : comment.nickname;
   const showReplies = replyState?.isShown ?? false;
   const hasMoreReplies = replyState?.hasMore ?? false;
   const isLoadingReplies = replyState?.isLoading ?? false;
@@ -43,10 +48,18 @@ export function CommentItem({
       <View style={styles.row}>
         <Pressable
           accessibilityRole="button"
-          onPress={() => onOpenProfile(comment.userId)}
+          disabled={!comment.userId || isAnonymousAuthor}
+          onPress={() => {
+            if (!isAnonymousAuthor) onOpenProfile(comment.userId);
+          }}
           style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
           testID={`comment-profile-button-${comment.id}`}>
-          <Avatar name={comment.nickname} size={nested ? 28 : 32} source={comment.avatar ?? null} />
+          <Avatar
+            isAnonymous={isAnonymousAuthor}
+            name={comment.nickname ?? undefined}
+            size={nested ? 28 : 32}
+            source={comment.avatar ?? null}
+          />
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -60,10 +73,13 @@ export function CommentItem({
           <View style={styles.headerRow}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => onOpenProfile(comment.userId)}
+              disabled={!comment.userId || isAnonymousAuthor}
+              onPress={() => {
+                if (!isAnonymousAuthor) onOpenProfile(comment.userId);
+              }}
               style={({ pressed }) => pressed && styles.pressed}
               testID={`comment-name-button-${comment.id}`}>
-              <Text style={styles.nickname}>{comment.nickname}</Text>
+              <Text style={styles.nickname}>{displayNickname}</Text>
             </Pressable>
             <Text style={styles.timeAgo}>{formatDiaryTimeAgo(comment.createdAt)}</Text>
             {isOwner ? (
@@ -108,6 +124,7 @@ export function CommentItem({
             <CommentItem
               key={reply.id}
               comment={reply}
+              isAnonymousDiary={isAnonymousDiary}
               nested
               onOpenActions={onOpenActions}
               onOpenProfile={onOpenProfile}
@@ -116,7 +133,13 @@ export function CommentItem({
             />
           ))}
           {isLoadingReplies ? (
-            <Text style={styles.helperLabel}>답글을 불러오는 중입니다.</Text>
+            <ActivityIndicator
+              accessible
+              accessibilityLabel="답글을 불러오는 중입니다."
+              accessibilityRole="progressbar"
+              color={colors.mutedText}
+              size="small"
+            />
           ) : null}
           {!isLoadingReplies && hasMoreReplies ? (
             <Pressable
@@ -183,10 +206,6 @@ const styles = StyleSheet.create({
   repliesBlock: {
     gap: spacing.sm,
     marginLeft: spacing['2xl'],
-  },
-  helperLabel: {
-    ...typography.caption,
-    color: colors.mutedText,
   },
   pressed: {
     opacity: 0.82,

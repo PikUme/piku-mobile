@@ -1,6 +1,7 @@
 import React from 'react';
 import { QueryClient } from '@tanstack/react-query';
 import { fireEvent, waitFor } from '@testing-library/react-native';
+import { Image } from 'react-native';
 
 import { NotificationsScreen } from '@/features/notifications/screens/NotificationsScreen';
 import * as notificationsApi from '@/lib/api/notifications';
@@ -76,6 +77,59 @@ describe('NotificationsScreen', () => {
     expect(screen.getByTestId('notification-thumbnail-501')).toBeTruthy();
     expect(useNotificationStore.getState().unreadCount).toBe(2);
     expect(screen.getByTestId('notifications-read-all-button')).toBeTruthy();
+  });
+
+  it('uses the anonymous avatar only for explicitly masked diary activity notifications', async () => {
+    jest.spyOn(notificationsApi, 'getNotifications').mockResolvedValue(
+      buildPage(
+        [
+          buildNotification(510, {
+            nickname: '익명',
+            avatarUrl: '',
+            type: 'COMMENT',
+            relatedDiaryId: 202603051,
+            diaryUserId: null,
+          }),
+          buildNotification(511, {
+            nickname: '익명',
+            avatarUrl: 'https://example.com/stale-anonymous-avatar.png',
+            type: 'REPLY',
+            relatedDiaryId: 202603052,
+            diaryUserId: null,
+          }),
+          buildNotification(512, {
+            nickname: '익명',
+            avatarUrl: '',
+            type: 'FRIEND_REQUEST',
+            relatedDiaryId: null,
+            diaryDate: null,
+            diaryUserId: null,
+          }),
+          buildNotification(513, {
+            nickname: '익명',
+            avatarUrl: '',
+            type: 'FRIEND_DIARY',
+            relatedDiaryId: 202603053,
+            diaryUserId: null,
+          }),
+        ],
+        0,
+        true,
+      ),
+    );
+
+    const screen = renderWithProviders(<NotificationsScreen />);
+
+    await waitFor(() => expect(screen.getByTestId('notification-row-510')).toBeTruthy());
+    expect(screen.getAllByRole('image', { name: '익명 프로필 아이콘' })).toHaveLength(3);
+    expect(screen.getByTestId('notification-row-512')).toBeTruthy();
+    expect(screen.getByTestId('notification-row-513')).toBeTruthy();
+    expect(screen.getByText('익', { exact: true })).toBeTruthy();
+    expect(
+      screen.UNSAFE_queryAllByType(Image).some(
+        (image) => image.props.source?.uri === 'https://example.com/stale-anonymous-avatar.png',
+      ),
+    ).toBe(false);
   });
 
   it('marks a notification as read and opens the profile calendar deep link', async () => {

@@ -43,7 +43,6 @@ export function CalendarMonthPicker({
 
   return (
     <BottomSheet
-      description="이동할 년도와 월을 선택합니다."
       onClose={onClose}
       title="날짜 선택"
       visible={visible}>

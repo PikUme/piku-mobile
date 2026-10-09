@@ -70,7 +70,6 @@ describe('ProfileEditScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('profile-edit-nickname-input').props.value).toBe('test'));
 
-    expect(screen.getByTestId('profile-edit-email-input').props.value).toBe('test@gmail.com');
     expect(screen.getByTestId('profile-edit-character-option-2').props.accessibilityState.selected).toBe(true);
     expect(screen.getByTestId('profile-edit-save-button')).toBeDisabled();
     expect(screen.queryByText('cat')).toBeNull();

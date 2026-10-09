@@ -200,8 +200,6 @@ export function FriendsScreen() {
   const error = activeTab === 'friends' ? friendsQuery.error : requestsQuery.error;
   const hasNextPage =
     activeTab === 'friends' ? friendsQuery.hasNextPage : requestsQuery.hasNextPage;
-  const isFetching =
-    activeTab === 'friends' ? friendsQuery.isFetching : requestsQuery.isFetching;
   const isFetchingNextPage =
     activeTab === 'friends' ? friendsQuery.isFetchingNextPage : requestsQuery.isFetchingNextPage;
   const isFetchNextPageError =
@@ -241,12 +239,10 @@ export function FriendsScreen() {
             <LoadingState label={activeTab === 'friends' ? '친구 목록을 불러오는 중입니다.' : '친구 요청을 불러오는 중입니다.'} />
           ) : activeTab === 'friends' ? (
             <EmptyState
-              description="친구를 추가하면 이곳에서 바로 확인할 수 있습니다."
               title="친구 목록이 비어 있습니다."
             />
           ) : (
             <EmptyState
-              description="받은 친구 요청이 생기면 이곳에 표시됩니다."
               title="대기 중인 친구 요청이 없습니다."
             />
           )
@@ -272,11 +268,6 @@ export function FriendsScreen() {
                   testID="friends-next-page-retry-button">
                   <Text style={styles.retryButtonLabel}>목록 다시 시도</Text>
                 </Pressable>
-              ) : null}
-              {!hasNextPage && !isFetching && !isFetchingNextPage ? (
-                <Text style={styles.endLabel} testID="friends-end-label">
-                  모든 {activeTab === 'friends' ? '친구' : '요청'}를 확인했습니다.
-                </Text>
               ) : null}
             </View>
           ) : null
@@ -317,9 +308,6 @@ export function FriendsScreen() {
                   style={styles.profileTextBlock}
                   testID={`friends-profile-block-${item.userId}`}>
                   <Text style={styles.nickname}>{item.nickname}</Text>
-                  <Text style={styles.helperText}>
-                    {isFriendTab ? '프로필 보기' : '받은 친구 요청'}
-                  </Text>
                 </View>
               </Pressable>
               <View
@@ -441,10 +429,6 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.text,
   },
-  helperText: {
-    ...typography.caption,
-    color: colors.mutedText,
-  },
   actionBlock: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -471,10 +455,5 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.text,
     fontWeight: '700',
-  },
-  endLabel: {
-    ...typography.caption,
-    color: colors.mutedText,
-    textAlign: 'center',
   },
 });

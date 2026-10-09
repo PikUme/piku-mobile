@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/colors';
 
@@ -11,8 +11,13 @@ export function LoadingState({
 }: LoadingStateProps) {
   return (
     <View style={styles.container}>
-      <ActivityIndicator color={colors.primary} size="small" />
-      <Text style={styles.label}>{label}</Text>
+      <ActivityIndicator
+        accessible
+        accessibilityLabel={label}
+        accessibilityRole="progressbar"
+        color={colors.primary}
+        size="small"
+      />
     </View>
   );
 }
@@ -22,10 +27,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-  },
-  label: {
-    fontSize: 14,
-    color: colors.mutedText,
   },
 });

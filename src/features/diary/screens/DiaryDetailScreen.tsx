@@ -105,10 +105,20 @@ export function DiaryDetailScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push(`/profile/${diary.userId}`)}
+            disabled={!diary.userId}
+            onPress={() => {
+              if (diary.userId) {
+                router.push(`/profile/${diary.userId}`);
+              }
+            }}
             style={({ pressed }) => [styles.authorBlock, pressed && styles.pressed]}
             testID="diary-detail-author-button">
-            <Avatar name={diary.nickname} size={40} source={diary.avatar ?? null} />
+            <Avatar
+              isAnonymous={diary.status === 'ANONYMOUS' || diary.userId === null}
+              name={diary.nickname}
+              size={40}
+              source={diary.avatar ?? null}
+            />
             <View style={styles.authorText}>
               <Text style={styles.authorName}>{diary.nickname}</Text>
               <Text style={styles.authorDate}>{formatDiaryDate(diary.date)}</Text>

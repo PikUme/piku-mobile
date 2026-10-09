@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import {
   Animated,
@@ -20,7 +20,13 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { FeedCard } from '@/features/feed/components/FeedCard';
 import { FeedCommentSheet } from '@/features/feed/components/FeedCommentSheet';
-import { addFeedLike, getFeedCursor, removeFeedLike } from '@/lib/api/feed';
+import { FeedSortSubheader } from '@/features/feed/components/FeedSortSubheader';
+import {
+  addFeedLike,
+  getFeedCursor,
+  removeFeedLike,
+  type FeedSortMode,
+} from '@/lib/api/feed';
 import { cancelFriendRequest, sendFriendRequest } from '@/lib/api/friends';
 import { showAlert } from '@/lib/ui/feedback';
 import { useAuthStore } from '@/store/authStore';
@@ -52,9 +58,11 @@ function flattenUniqueItems(pages: { items: FeedDiary[] }[]) {
 export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps) {
   void _entryPoint;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const user = useAuthStore((state) => state.user);
   const [selectedPost, setSelectedPost] = useState<FeedDiary | null>(null);
+  const [selectedSort, setSelectedSort] = useState<FeedSortMode>('latest');
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(FEED_HEADER_SPACER);
   const [statusOverrides, setStatusOverrides] = useState<Record<number, FriendshipStatus>>(
@@ -72,6 +80,8 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   const headerOpacity = useRef(new Animated.Value(1)).current;
   const lastScrollOffsetRef = useRef(0);
   const headerVisibleRef = useRef(true);
+  const listRef = useRef<FlatList<FeedDiary>>(null);
+  const feedViewerKey = isLoggedIn ? user?.id ?? 'member' : 'guest';
 
   const {
     data,
@@ -83,11 +93,12 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     isFetchingNextPage,
     isFetchNextPageError,
     isPending,
+    isRefetching,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['feed', isLoggedIn ? user?.id ?? 'member' : 'guest'],
+    queryKey: ['feed', feedViewerKey, selectedSort],
     initialPageParam: null as string | null,
-    queryFn: ({ pageParam }) => getFeedCursor(pageParam),
+    queryFn: ({ pageParam }) => getFeedCursor(pageParam, 20, selectedSort),
     getNextPageParam: (lastPage) =>
       lastPage.hasNext ? lastPage.nextCursor ?? undefined : undefined,
   });
@@ -107,6 +118,10 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   );
 
   const requestNextPage = () => {
+    if (!hasNextPage || isFetching) {
+      return;
+    }
+
     void (fetchNextPage as () => Promise<unknown>)();
   };
 
@@ -158,6 +173,21 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     },
     [animateHeader],
   );
+
+  const handleSortChange = (nextSort: FeedSortMode) => {
+    if (nextSort === selectedSort) {
+      return;
+    }
+
+    queryClient.removeQueries({
+      queryKey: ['feed', feedViewerKey, nextSort],
+      exact: true,
+    });
+    setSelectedSort(nextSort);
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    lastScrollOffsetRef.current = 0;
+    animateHeader(true);
+  };
 
   const handleOpenDetail = (post: FeedDiary) => {
     setSelectedPost(null);
@@ -251,6 +281,10 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   }, []);
 
   const handleSendFriendRequest = async (post: FeedDiary) => {
+    if (!post.userId) {
+      return;
+    }
+
     try {
       await sendFriendRequest(post.userId);
       setStatusOverrides((current) => ({
@@ -267,6 +301,10 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
   };
 
   const handleCancelFriendRequest = async (post: FeedDiary) => {
+    if (!post.userId) {
+      return;
+    }
+
     try {
       await cancelFriendRequest(post.userId);
       setStatusOverrides((current) => ({
@@ -309,6 +347,10 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
       testID="feed-floating-header">
       <View onLayout={handleHeaderLayout} style={styles.floatingHeaderInner}>
         <AppTopBar compact title="PikUme" variant="brand" />
+        <FeedSortSubheader
+          onSortChange={handleSortChange}
+          selectedSort={selectedSort}
+        />
       </View>
     </Animated.View>
   );
@@ -346,12 +388,12 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
     <ScreenContainer contentStyle={styles.screen}>
       {floatingHeader}
       <FlatList
+        ref={listRef}
         contentContainerStyle={[styles.listContent, { paddingTop: headerHeight }]}
         data={items}
         keyExtractor={(item) => String(item.diaryId)}
         ListEmptyComponent={
           <EmptyState
-            description="아직 노출할 공개 일기가 없습니다."
             title="피드가 비어 있습니다."
           />
         }
@@ -372,23 +414,18 @@ export function FeedScreen({ entryPoint: _entryPoint = 'feed' }: FeedScreenProps
                   <Text style={styles.retryButtonLabel}>다음 피드 다시 시도</Text>
                 </Pressable>
               ) : null}
-              {!hasNextPage && !isFetching && !isFetchingNextPage ? (
-                <Text style={styles.endLabel} testID="feed-end-label">
-                  모든 일기를 확인했습니다.
-                </Text>
-              ) : null}
             </View>
           ) : null
         }
         onEndReached={() => {
-          if (!hasNextPage || isFetchingNextPage) {
-            return;
-          }
-
           requestNextPage();
         }}
         onEndReachedThreshold={0.45}
+        onRefresh={() => {
+          void refetch();
+        }}
         onScroll={handleFeedScroll}
+        refreshing={isRefetching}
         renderItem={({ item }) => (
           <FeedCard
             isLoggedIn={isLoggedIn}
@@ -443,9 +480,7 @@ const styles = StyleSheet.create({
   floatingHeaderInner: {
     paddingHorizontal: spacing['2xl'],
     paddingTop: spacing.xs,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 0,
     backgroundColor: colors.background,
   },
   list: {
@@ -472,9 +507,5 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.text,
     fontWeight: '700',
-  },
-  endLabel: {
-    ...typography.caption,
-    color: colors.mutedText,
   },
 });
